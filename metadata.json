@@ -1,0 +1,7 @@
+{
+  "name": "Последний сигнал (The Last Signal)",
+  "description": "Космическое научно-фантастическое приключение: исследование заброшенных станций, древних артефактов, динамичные бои и раскрытие тайны последнего сигнала.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

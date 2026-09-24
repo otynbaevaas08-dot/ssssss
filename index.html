@@ -1,0 +1,3689 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Последний сигнал — Космическое приключение</title>
+  <meta name="description" content="Космическое научно-фантастическое приключение: исследование заброшенных станций, древних артефактов, динамичные бои и раскрытие тайны последнего сигнала.">
+  <meta property="og:title" content="Последний сигнал — Космическое приключение">
+  <meta property="og:description" content="Космическое научно-фантастическое приключение: исследование заброшенных станций, древних артефактов, динамичные бои и раскрытие тайны последнего сигнала.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    :root {
+      --bg-dark: #05070d;
+      --cyan: #00f0ff;
+      --cyan-dim: rgba(0, 240, 255, 0.2);
+      --violet: #9d4edd;
+      --amber: #ffb703;
+      --red: #ff2a5f;
+      --green: #06d6a0;
+      --hud-bg: rgba(7, 13, 26, 0.85);
+      --hud-border: rgba(0, 240, 255, 0.35);
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-dark);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #e2e8f0;
+    }
+    #game-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+    /* UI Layer */
+    #ui-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .interactive {
+      pointer-events: auto;
+    }
+
+    /* HUD Elements */
+    .hud-top-left {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      width: 280px;
+      background: var(--hud-bg);
+      border: 1px solid var(--hud-border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5), inset 0 0 10px rgba(0, 240, 255, 0.05);
+    }
+    .bar-group {
+      margin-bottom: 8px;
+    }
+    .bar-group:last-child {
+      margin-bottom: 0;
+    }
+    .bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+    }
+    .bar-container {
+      width: 100%;
+      height: 7px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bar-fill {
+      height: 100%;
+      transition: width 0.15s ease-out;
+      border-radius: 4px;
+    }
+    .hp-fill { background: linear-gradient(90deg, #ff2a5f, #ff6b8b); box-shadow: 0 0 8px rgba(255, 42, 95, 0.5); }
+    .shield-fill { background: linear-gradient(90deg, #00b4d8, #00f0ff); box-shadow: 0 0 8px rgba(0, 240, 255, 0.5); }
+    .energy-fill { background: linear-gradient(90deg, #9d4edd, #c77dff); box-shadow: 0 0 8px rgba(157, 78, 221, 0.5); }
+    .xp-fill { background: linear-gradient(90deg, #ffb703, #ffd166); }
+
+    .hud-top-right {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+    }
+    .mission-box {
+      width: 300px;
+      background: var(--hud-bg);
+      border: 1px solid var(--hud-border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    .mission-tag {
+      font-size: 10px;
+      color: var(--cyan);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mission-tag::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 6px var(--cyan);
+    }
+    .mission-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .mission-desc {
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+
+    .minimap-box {
+      width: 130px;
+      height: 130px;
+      background: var(--hud-bg);
+      border: 1px solid var(--hud-border);
+      border-radius: 8px;
+      backdrop-filter: blur(8px);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+    #minimap-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Bottom Resource Bar */
+    .hud-bottom {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--hud-bg);
+      border: 1px solid var(--hud-border);
+      border-radius: 24px;
+      padding: 8px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 25px rgba(0,0,0,0.6);
+    }
+    .res-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .res-icon {
+      width: 14px;
+      height: 14px;
+      display: inline-block;
+      border-radius: 3px;
+    }
+    .icon-crystal { background: #00f0ff; box-shadow: 0 0 6px #00f0ff; transform: rotate(45deg); }
+    .icon-metal { background: #cbd5e1; box-shadow: 0 0 6px #cbd5e1; border-radius: 50%; }
+    .icon-core { background: #ffb703; box-shadow: 0 0 6px #ffb703; clip-path: polygon(50% 0%, 100% 100%, 0% 100%); }
+    .icon-matter { background: #9d4edd; box-shadow: 0 0 6px #9d4edd; border-radius: 50%; }
+
+    /* Quick Action Buttons */
+    .hud-actions {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      display: flex;
+      gap: 8px;
+    }
+    .btn-icon {
+      background: var(--hud-bg);
+      border: 1px solid var(--hud-border);
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-icon:hover {
+      border-color: var(--cyan);
+      color: #fff;
+      box-shadow: 0 0 12px var(--cyan-dim);
+      transform: translateY(-1px);
+    }
+    .btn-icon:active {
+      transform: translateY(1px);
+    }
+
+    /* Ability indicator */
+    .ability-badge {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      background: var(--hud-bg);
+      border: 1px solid var(--hud-border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(8px);
+    }
+    .ability-circle {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid var(--cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 10px;
+      position: relative;
+    }
+    .ability-ready {
+      background: rgba(0, 240, 255, 0.2);
+      box-shadow: 0 0 8px var(--cyan);
+    }
+
+    /* Floating Interact Prompt */
+    #interact-prompt {
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(7, 13, 26, 0.9);
+      border: 1px solid var(--cyan);
+      color: #fff;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      display: none;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+      animation: pulsePrompt 1.2s infinite alternate;
+    }
+    @keyframes pulsePrompt {
+      0% { transform: translate(-50%, -50%) scale(0.96); }
+      100% { transform: translate(-50%, -50%) scale(1.04); }
+    }
+
+    /* Boss Banner */
+    #boss-bar-wrap {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 500px;
+      max-width: 90vw;
+      background: rgba(15, 7, 15, 0.9);
+      border: 1px solid var(--red);
+      border-radius: 8px;
+      padding: 10px 16px;
+      display: none;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 25px rgba(255, 42, 95, 0.4);
+      z-index: 15;
+    }
+    .boss-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ff6b8b;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .boss-bar-container {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .boss-bar-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #ff2a5f, #ff758c);
+      box-shadow: 0 0 10px #ff2a5f;
+      transition: width 0.1s ease-out;
+    }
+
+    /* Modals & Overlays */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(3, 5, 10, 0.85);
+      backdrop-filter: blur(10px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      pointer-events: auto;
+    }
+    .modal-card {
+      background: #0b1329;
+      border: 1px solid var(--hud-border);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 640px;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(0, 240, 255, 0.15);
+      position: relative;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+      padding-bottom: 12px;
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px 8px;
+    }
+    .modal-close:hover {
+      color: #fff;
+    }
+
+    /* Menu Buttons */
+    .menu-btn {
+      display: block;
+      width: 100%;
+      padding: 12px 20px;
+      margin-bottom: 12px;
+      background: rgba(0, 240, 255, 0.05);
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .menu-btn:hover {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: var(--cyan);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+      transform: translateY(-2px);
+    }
+    .menu-btn.primary {
+      background: linear-gradient(90deg, #0077b6, #00b4d8);
+      border-color: var(--cyan);
+    }
+    .menu-btn.primary:hover {
+      background: linear-gradient(90deg, #0096c7, #00f0ff);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+    }
+    .menu-btn.danger {
+      background: rgba(255, 42, 95, 0.1);
+      border-color: rgba(255, 42, 95, 0.3);
+    }
+    .menu-btn.danger:hover {
+      background: rgba(255, 42, 95, 0.3);
+      border-color: var(--red);
+      box-shadow: 0 0 15px rgba(255, 42, 95, 0.4);
+    }
+
+    /* Upgrade Grid */
+    .upgrade-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .upgrade-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .upg-info {
+      flex: 1;
+    }
+    .upg-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .upg-lvl {
+      font-size: 11px;
+      color: var(--cyan);
+      background: rgba(0, 240, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .upg-desc {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+    .upg-btn {
+      padding: 8px 16px;
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid var(--cyan);
+      color: #fff;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .upg-btn:hover:not(:disabled) {
+      background: var(--cyan);
+      color: #000;
+      box-shadow: 0 0 12px var(--cyan);
+    }
+    .upg-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      border-color: #475569;
+    }
+
+    /* Artifacts Grid */
+    .artifact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .artifact-slot {
+      aspect-ratio: 1;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .artifact-slot.filled {
+      border-style: solid;
+      background: rgba(0, 240, 255, 0.04);
+    }
+    .artifact-slot.rarity-common { border-color: #94a3b8; }
+    .artifact-slot.rarity-rare { border-color: #00b4d8; box-shadow: inset 0 0 10px rgba(0, 180, 216, 0.15); }
+    .artifact-slot.rarity-epic { border-color: #9d4edd; box-shadow: inset 0 0 10px rgba(157, 78, 221, 0.2); }
+    .artifact-slot.rarity-legendary { border-color: #ffb703; box-shadow: inset 0 0 15px rgba(255, 183, 3, 0.25); }
+    .artifact-slot:hover {
+      transform: translateY(-2px);
+    }
+    .art-icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+    .art-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.2;
+    }
+    .art-desc-box {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 12px 16px;
+      min-height: 80px;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+
+    /* Screen Shake & Notification */
+    #notif-banner {
+      position: absolute;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 240, 255, 0.15);
+      border: 1px solid var(--cyan);
+      color: #fff;
+      padding: 8px 24px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+      display: none;
+      z-index: 50;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    /* Cosmic Storm Hazard Warning */
+    #storm-warning-badge {
+      position: absolute;
+      top: 55px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: rgba(15, 7, 20, 0.94);
+      border: 1px solid #ff2a5f;
+      border-left: 4px solid #ff2a5f;
+      padding: 8px 18px;
+      border-radius: 6px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 24px rgba(255, 42, 95, 0.4);
+      z-index: 52;
+      pointer-events: none;
+      animation: stormAlertPulse 1.2s infinite alternate ease-in-out;
+    }
+    #storm-warning-badge.gravity {
+      border-color: #f59e0b;
+      border-left-color: #f59e0b;
+      background: rgba(28, 16, 4, 0.94);
+      box-shadow: 0 0 24px rgba(245, 158, 11, 0.4);
+    }
+    #storm-warning-badge.ion {
+      border-color: #00f0ff;
+      border-left-color: #a855f7;
+      background: rgba(8, 12, 32, 0.94);
+      box-shadow: 0 0 24px rgba(0, 240, 255, 0.4);
+    }
+    @keyframes stormAlertPulse {
+      0% { transform: translateX(-50%) scale(0.98); opacity: 0.88; }
+      100% { transform: translateX(-50%) scale(1.02); opacity: 1; }
+    }
+    .storm-badge-icon {
+      font-size: 20px;
+      line-height: 1;
+    }
+    .storm-badge-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    #storm-warning-badge.gravity .storm-badge-title { color: #f59e0b; }
+    #storm-warning-badge.ion .storm-badge-title { color: #00f0ff; }
+    .storm-badge-desc {
+      font-size: 11px;
+      color: #e2e8f0;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* Level Up Tip Toast with 2s Opacity Animation */
+    #level-tip-toast {
+      position: absolute;
+      top: 148px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 460px;
+      width: 90%;
+      background: rgba(7, 13, 26, 0.94);
+      border: 1px solid rgba(0, 240, 255, 0.45);
+      border-left: 4px solid var(--amber);
+      color: #e2e8f0;
+      padding: 10px 16px;
+      border-radius: 8px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.75), 0 0 20px rgba(0, 240, 255, 0.2);
+      backdrop-filter: blur(12px);
+      z-index: 55;
+      pointer-events: none;
+      display: none;
+      opacity: 0;
+    }
+    #level-tip-toast.animate-tip {
+      display: block;
+      animation: tipFadeInOut 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes tipFadeInOut {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -8px) scale(0.96);
+      }
+      15% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+      }
+      80% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, 6px) scale(0.98);
+      }
+    }
+    .tip-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 3px;
+    }
+    .tip-content {
+      font-size: 12px;
+      color: #f1f5f9;
+      line-height: 1.45;
+    }
+
+    /* Story Text */
+    .story-text {
+      font-size: 14px;
+      line-height: 1.8;
+      color: #e2e8f0;
+      margin-bottom: 24px;
+      white-space: pre-line;
+      text-align: justify;
+    }
+
+    /* Touch Controls (Mobile Friendly) */
+    .touch-controls {
+      display: none;
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      width: 100%;
+      padding: 0 20px;
+      pointer-events: auto;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .touch-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(0, 240, 255, 0.2);
+      border: 2px solid var(--cyan);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 768px) {
+      .hud-top-left { width: 220px; padding: 8px 12px; }
+      .mission-box { width: 220px; padding: 8px 12px; }
+      .minimap-box { width: 100px; height: 100px; }
+      .hud-bottom { padding: 6px 14px; gap: 12px; font-size: 11px; }
+      .touch-controls { display: flex; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Canvas for Game Graphics -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- UI Overlay -->
+  <div id="ui-layer">
+    <!-- Top-Left Player Stats -->
+    <div class="hud-top-left interactive" id="hud-stats">
+      <div class="bar-group">
+        <div class="bar-label"><span style="color:#ff6b8b">Корпус (HP)</span><span id="txt-hp">100 / 100</span></div>
+        <div class="bar-container"><div class="bar-fill hp-fill" id="bar-hp" style="width: 100%;"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label"><span style="color:#00f0ff">Щит</span><span id="txt-shield">80 / 80</span></div>
+        <div class="bar-container"><div class="bar-fill shield-fill" id="bar-shield" style="width: 100%;"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label"><span style="color:#c77dff">Энергия</span><span id="txt-energy">100 / 100</span></div>
+        <div class="bar-container"><div class="bar-fill energy-fill" id="bar-energy" style="width: 100%;"></div></div>
+      </div>
+      <div class="bar-group" style="margin-top: 6px;">
+        <div class="bar-label"><span style="color:#ffd166">Уровень <span id="txt-lvl">1</span></span><span id="txt-xp">0 / 100 XP</span></div>
+        <div class="bar-container"><div class="bar-fill xp-fill" id="bar-xp" style="width: 0%;"></div></div>
+      </div>
+    </div>
+
+    <!-- Top-Right Mission & Minimap -->
+    <div class="hud-top-right interactive">
+      <div class="mission-box" id="hud-mission">
+        <div class="mission-tag">Текущая миссия</div>
+        <div class="mission-title" id="mission-title">Найти источник сигнала</div>
+        <div class="mission-desc" id="mission-desc">Исследуйте Забытый сектор и обнаружьте исследовательский зонд.</div>
+      </div>
+      <div class="minimap-box">
+        <canvas id="minimap-canvas" width="130" height="130"></canvas>
+      </div>
+    </div>
+
+    <!-- Boss Health Bar -->
+    <div id="boss-bar-wrap">
+      <div class="boss-name" id="boss-title">Страж Разлома</div>
+      <div class="boss-bar-container">
+        <div class="boss-bar-fill" id="boss-fill"></div>
+      </div>
+    </div>
+
+    <!-- Interact Prompt -->
+    <div id="interact-prompt">[E] Исследовать объект</div>
+
+    <!-- Cosmic Storm Warning Badge -->
+    <div id="storm-warning-badge" class="storm-badge">
+      <span class="storm-badge-icon">⚡</span>
+      <div>
+        <div class="storm-badge-title" id="storm-badge-title">ИОННЫЙ ШТОРМ</div>
+        <div class="storm-badge-desc" id="storm-badge-desc">Щиты временно блокированы!</div>
+      </div>
+    </div>
+
+    <!-- Notification Banner -->
+    <div id="notif-banner">Уровень повышен!</div>
+
+    <!-- Level-up Tip Toast -->
+    <div id="level-tip-toast">
+      <div class="tip-header">
+        <span>💡</span>
+        <span id="tip-title">Бортовой совет // Уровень 2</span>
+      </div>
+      <div class="tip-content" id="tip-text">
+        Не забывайте улучшать орудия и щиты в Инженерном отсеке [U].
+      </div>
+    </div>
+
+    <!-- Ability Indicator -->
+    <div class="ability-badge interactive" id="ability-badge">
+      <div class="ability-circle ability-ready" id="ability-icon">SPACE</div>
+      <div>
+        <div style="font-weight:700; color:#fff;">ЭМИ-Вспышка</div>
+        <div style="font-size:10px; color:#94a3b8;" id="ability-status">Готово к пуску</div>
+      </div>
+    </div>
+
+    <!-- Bottom Resource Counters -->
+    <div class="hud-bottom interactive">
+      <div class="res-item"><span class="res-icon icon-crystal"></span><span id="res-crystals">0</span></div>
+      <div class="res-item"><span class="res-icon icon-metal"></span><span id="res-metal">0</span></div>
+      <div class="res-item"><span class="res-icon icon-core"></span><span id="res-cores">0</span></div>
+      <div class="res-item"><span class="res-icon icon-matter"></span><span id="res-matter">0</span></div>
+    </div>
+
+    <!-- Action Buttons (Bottom Right) -->
+    <div class="hud-actions interactive">
+      <button class="btn-icon" id="btn-inventory" title="Инвентарь [I]">📦 Инвентарь</button>
+      <button class="btn-icon" id="btn-upgrades" title="Улучшения [U]">⚡ Улучшения</button>
+      <button class="btn-icon" id="btn-pause" title="Пауза [Esc]">⏸ Меню</button>
+      <button class="btn-icon" id="btn-audio" title="Звук">🔊</button>
+    </div>
+  </div>
+
+  <!-- Modal: Main Menu -->
+  <div class="modal-overlay" id="modal-menu" style="display: flex;">
+    <div class="modal-card" style="text-align: center; max-width: 480px;">
+      <h1 style="font-size: 32px; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 8px; text-shadow: 0 0 20px rgba(0,240,255,0.6);">ПОСЛЕДНИЙ СИГНАЛ</h1>
+      <p style="font-size: 13px; color: #94a3b8; margin-bottom: 24px; letter-spacing: 1px;">НАУЧНО-ФАНТАСТИЧЕСКОЕ ИССЛЕДОВАТЕЛЬСКОЕ ПРИКЛЮЧЕНИЕ</p>
+      
+      <button class="menu-btn primary" id="menu-start">Начать исследование</button>
+      <button class="menu-btn" id="menu-continue" style="display:none;">Продолжить миссию</button>
+      <button class="menu-btn" id="menu-controls">Управление кораблем</button>
+      <button class="menu-btn" id="menu-lore">О миссии и сигнале</button>
+      <button class="menu-btn danger" id="menu-reset" style="display:none;">Сбросить сохранение</button>
+    </div>
+  </div>
+
+  <!-- Modal: Intro Story -->
+  <div class="modal-overlay" id="modal-intro">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <div class="modal-title" style="color: var(--cyan);">ВХОДЯЩАЯ ТЕЛЕМЕТРИЯ // 2247 ГОД</div>
+      </div>
+      <div class="story-text" id="intro-story-body">
+Год 2247.
+
+Человечество обнаружило неизвестный сигнал на самом краю исследованного глубокого космоса.
+
+Источник сигнала скрыт в неизведанном секторе, откуда никогда не возвращались исследовательские корабли Альянса.
+
+Ты — последний исследователь, отправленный на его поиски на модернизированном корабле-разведчике «Одиссей-9».
+
+Через несколько минут после гипер-перехода в сектор бортовой компьютер перехватил искаженное радиосообщение:
+
+"НЕ ИЩИТЕ НАС."
+
+После этого координаты сигнала исчезли в космической аномалии. Найди маяки, собери древние артефакты и узнай, кто стоит за Сигналом.
+      </div>
+      <button class="menu-btn primary" id="intro-btn-play">Запустить двигатели [Пробел]</button>
+    </div>
+  </div>
+
+  <!-- Modal: Pause Menu -->
+  <div class="modal-overlay" id="modal-pause">
+    <div class="modal-card" style="max-width: 400px; text-align: center;">
+      <div class="modal-header">
+        <div class="modal-title">ПАУЗА СИСТЕМЫ</div>
+        <button class="modal-close" id="pause-close">×</button>
+      </div>
+      <button class="menu-btn primary" id="pause-resume">Продолжить полет</button>
+      <button class="menu-btn" id="pause-inv">Инвентарь и артефакты</button>
+      <button class="menu-btn" id="pause-upg">Инженерный отсек (Улучшения)</button>
+      <button class="menu-btn" id="pause-to-menu">В главное меню</button>
+    </div>
+  </div>
+
+  <!-- Modal: Inventory & Artifacts -->
+  <div class="modal-overlay" id="modal-inventory">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">АРТЕФАКТЫ И ИНВЕНТАРЬ</div>
+        <button class="modal-close" id="inv-close">×</button>
+      </div>
+      <p style="font-size:12px; color:#94a3b8; margin-bottom: 16px;">Найденные древние артефакты наделяют корабль пассивными модификаторами.</p>
+      <div class="artifact-grid" id="artifact-list">
+        <!-- Artifact Slots inserted by JS -->
+      </div>
+      <div class="art-desc-box" id="artifact-details">
+        Выберите артефакт для просмотра параметров и истории.
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Upgrades -->
+  <div class="modal-overlay" id="modal-upgrades">
+    <div class="modal-card" style="max-width: 600px;">
+      <div class="modal-header">
+        <div class="modal-title">ИНЖЕНЕРНЫЙ ОТСЕК — МОДЕРНИЗАЦИЯ</div>
+        <button class="modal-close" id="upg-close">×</button>
+      </div>
+      <div class="upgrade-list" id="upgrade-items-container">
+        <!-- Upgrade rows inserted by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Inspection / Dialogue -->
+  <div class="modal-overlay" id="modal-inspect">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <div class="modal-title" id="inspect-title">Анализ объекта</div>
+        <button class="modal-close" id="inspect-close">×</button>
+      </div>
+      <div class="story-text" id="inspect-body">
+        Сканирование древней конструкции...
+      </div>
+      <button class="menu-btn primary" id="inspect-action">Принять данные</button>
+    </div>
+  </div>
+
+  <!-- Modal: Controls / Info -->
+  <div class="modal-overlay" id="modal-controls-info">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title">УПРАВЛЕНИЕ КОРАБЛЕМ</div>
+        <button class="modal-close" id="controls-close">×</button>
+      </div>
+      <div style="font-size:13px; line-height: 2; color:#cbd5e1; margin-bottom: 20px;">
+        <div><b>W, A, S, D</b> / Стрелки — Маневрирование и тяга двигателей</div>
+        <div><b>Мышь</b> — Наведение орудийных систем</div>
+        <div><b>Левая Кнопка Мыши</b> — Огонь из сдвоенных плазмометов</div>
+        <div><b>Shift</b> — Форсаж (ускорение, расходует энергию)</div>
+        <div><b>Space</b> — ЭМИ-Вспышка (уничтожает снаряды, ранит врагов)</div>
+        <div><b>E</b> — Исследовать аномалию / открыть контейнер</div>
+        <div><b>I</b> — Инвентарь артефактов</div>
+        <div><b>U</b> — Модернизация корабля</div>
+        <div><b>Esc</b> — Пауза / Меню</div>
+      </div>
+      <button class="menu-btn primary" id="controls-ok">Понятно</button>
+    </div>
+  </div>
+
+  <!-- Modal: Victory / Ending -->
+  <div class="modal-overlay" id="modal-victory">
+    <div class="modal-card" style="text-align: center; max-width: 540px;">
+      <h2 style="font-size: 26px; color: var(--green); margin-bottom: 12px; letter-spacing: 1px;">СИГНАЛ НАЙДЕН</h2>
+      <div class="story-text" style="text-align: left;" id="victory-text">
+Вы победили Создателя и достигли самого ядра космического Разлома.
+
+Завеса тайны спала: сигнал "НЕ ИЩИТЕ НАС" был не угрозой, а последним защитным щитом древней расы Предтеч, оберегавших молодую галактику от темного вакуумного коллапса.
+
+Получив доступ к звездной матрице, ваш корабль передал истинные координаты на Землю. Человечество теперь не одиноко во Вселенной — эпоха изоляции завершилась.
+      </div>
+      <div style="background: rgba(0, 240, 255, 0.05); border: 1px solid var(--cyan-dim); border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 12px; color: #cbd5e1; display:flex; justify-content:space-around;">
+        <div>Врагов сбито: <b id="stat-kills" style="color:var(--cyan)">0</b></div>
+        <div>Собрано ядер: <b id="stat-cores" style="color:var(--amber)">0</b></div>
+        <div>Секторов пройдено: <b style="color:var(--green)">4 / 4</b></div>
+      </div>
+      <button class="menu-btn primary" id="btn-victory-restart">Начать новую экспедицию (NG+)</button>
+      <button class="menu-btn" id="btn-victory-freeroam">Свободный полет по секторам</button>
+    </div>
+  </div>
+
+  <!-- Modal: Game Over -->
+  <div class="modal-overlay" id="modal-gameover">
+    <div class="modal-card" style="text-align: center; max-width: 440px;">
+      <h2 style="font-size: 26px; color: var(--red); margin-bottom: 12px; letter-spacing: 1px;">КОРАБЛЬ УНИЧТОЖЕН</h2>
+      <p style="font-size: 13px; color: #94a3b8; margin-bottom: 24px;">Критическое повреждение реактора. Аварийная капсула передала координаты для восстановления на ближайшей базе сектора.</p>
+      <button class="menu-btn primary" id="btn-respawn">Активировать резервный корпус</button>
+    </div>
+  </div>
+
+  <!-- Main Game Engine Logic -->
+  <script>
+    /* ==========================================================================
+       ПОСЛЕДНИЙ СИГНАЛ (THE LAST SIGNAL) — ПОЛНОЦЕННАЯ БРАУЗЕРНАЯ SCI-FI ИГРА
+       ========================================================================== */
+
+    // --- Web Audio Synthesizer (Zero External Dependencies) ---
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+        this.ambientOsc = null;
+        this.ambientGain = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+          this.startAmbient();
+        } else if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      toggle() {
+        this.enabled = !this.enabled;
+        if (this.ambientGain) {
+          this.ambientGain.gain.setValueAtTime(this.enabled ? 0.04 : 0, this.ctx.currentTime);
+        }
+        return this.enabled;
+      }
+
+      startAmbient() {
+        if (!this.ctx || this.ambientOsc) return;
+        try {
+          const osc1 = this.ctx.createOscillator();
+          const osc2 = this.ctx.createOscillator();
+          const filter = this.ctx.createBiquadFilter();
+          this.ambientGain = this.ctx.createGain();
+
+          osc1.type = 'sawtooth';
+          osc1.frequency.setValueAtTime(55, this.ctx.currentTime); // A1
+
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(110, this.ctx.currentTime); // A2
+
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(220, this.ctx.currentTime);
+
+          this.ambientGain.gain.setValueAtTime(this.enabled ? 0.04 : 0, this.ctx.currentTime);
+
+          osc1.connect(filter);
+          osc2.connect(filter);
+          filter.connect(this.ambientGain);
+          this.ambientGain.connect(this.ctx.destination);
+
+          osc1.start();
+          osc2.start();
+          this.ambientOsc = osc1;
+        } catch(e) {
+          console.warn("Audio init deferred", e);
+        }
+      }
+
+      playLaser(isEnemy = false) {
+        if (!this.enabled || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = isEnemy ? 'sawtooth' : 'sine';
+          osc.frequency.setValueAtTime(isEnemy ? 320 : 680, now);
+          osc.frequency.exponentialRampToValueAtTime(isEnemy ? 120 : 160, now + 0.12);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        } catch(e) {}
+      }
+
+      playExplosion(big = false) {
+        if (!this.enabled || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const bufferSize = this.ctx.sampleRate * (big ? 0.6 : 0.25);
+          const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+          }
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = buffer;
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(big ? 350 : 600, now);
+          filter.frequency.exponentialRampToValueAtTime(30, now + (big ? 0.6 : 0.25));
+
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(big ? 0.35 : 0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + (big ? 0.6 : 0.25));
+
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+          noise.start(now);
+        } catch(e) {}
+      }
+
+      playPickup() {
+        if (!this.enabled || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, now); // C5
+          osc.frequency.setValueAtTime(659.25, now + 0.05); // E5
+          osc.frequency.setValueAtTime(783.99, now + 0.1); // G5
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        } catch(e) {}
+      }
+
+      playArtifactChime() {
+        if (!this.enabled || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          [440, 554.37, 659.25, 880].forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+            gain.gain.setValueAtTime(0.12, now + idx * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.8);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + idx * 0.08);
+            osc.stop(now + idx * 0.08 + 0.85);
+          });
+        } catch(e) {}
+      }
+
+      playEmp() {
+        if (!this.enabled || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(800, now);
+          osc.frequency.exponentialRampToValueAtTime(40, now + 0.5);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.5);
+        } catch(e) {}
+      }
+
+      playStormWarning() {
+        if (!this.enabled || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(260, now);
+          osc.frequency.exponentialRampToValueAtTime(90, now + 0.4);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.4);
+        } catch(e) {}
+      }
+    }
+
+    const audio = new SoundEngine();
+
+    // --- Game Data & Definitions ---
+    const ZONES = [
+      { id: 1, name: 'Забытый сектор', color: '#00f0ff', desc: 'Темный космос, первые аномалии и древние маяки.' },
+      { id: 2, name: 'Планета Эхо', color: '#06d6a0', desc: 'Орбита чужой планеты с парящими монолитами и кристаллами.' },
+      { id: 3, name: 'Мертвый флот', color: '#9d4edd', desc: 'Кладбище гигантских космических дредноутов и опасных стражей.' },
+      { id: 4, name: 'Разлом', color: '#ff2a5f', desc: 'Сердце пространственной аномалии, где скрыт Создатель.' }
+    ];
+
+    const ARTIFACTS_DEF = [
+      { id: 'art_abyss', name: 'Око Бездны', rarity: 'rare', icon: '👁️', desc: 'Увеличивает максимальную энергию на +35 и ускоряет её восстановление на +50%.' },
+      { id: 'art_echo', name: 'Ядро Эха', rarity: 'rare', icon: '💎', desc: 'Увеличивает максимальную скорость корабля на +30% и тягу двигателей.' },
+      { id: 'art_heart', name: 'Сердце Звезды', rarity: 'epic', icon: '⭐', desc: 'Повышает урон орудийных батарей на +35% и шанс критического удара на +20%.' },
+      { id: 'art_chrono', name: 'Хроно-Кристалл', rarity: 'epic', icon: '⏳', desc: 'Сокращает время перезарядки способности «ЭМИ-Вспышка» на 40%.' },
+      { id: 'art_key', name: 'Ключ Создателей', rarity: 'legendary', icon: '🗝️', desc: 'Древний ключ, снимающий силовую блокаду гипер-перехода в финальный Разлом.' },
+      { id: 'art_nanite', name: 'Нано-Сфера', rarity: 'legendary', icon: '🔮', desc: 'Медленно самовосстанавливает корпус корабля (3 HP в секунду).' }
+    ];
+
+    const MISSIONS = [
+      { id: 1, title: 'Найти источник сигнала', desc: 'Исследуйте Забытый сектор и обнаружьте исследовательский зонд.', targetZone: 1 },
+      { id: 2, title: 'Исследовать руины Эхо', desc: 'Совершите переход на Планету Эхо и изучите древний монолит.', targetZone: 2 },
+      { id: 3, title: 'Собрать 3 энергетических ядра', desc: 'Уничтожайте охранников и вскрывайте контейнеры на Планете Эхо.', targetZone: 2, reqCores: 3 },
+      { id: 4, title: 'Уничтожить Стража Разлома', desc: 'Войдите в сектор Мертвый флот и сразитесь с тяжелым био-стражем.', targetZone: 3 },
+      { id: 5, title: 'Победить Создателя в Разломе', desc: 'Пройдите через гипер-врата Разлома и найдите источник Последнего Сигнала.', targetZone: 4 }
+    ];
+
+    // --- Main Game State Class ---
+    class Game {
+      constructor() {
+        this.canvas = document.getElementById('game-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.minimapCanvas = document.getElementById('minimap-canvas');
+        this.minimapCtx = this.minimapCanvas.getContext('2d');
+
+        this.state = 'MENU'; // MENU, INTRO, PLAYING, PAUSE, VICTORY, GAMEOVER
+        this.currentZone = 1;
+        this.worldSize = 3600;
+
+        // Player Vessel
+        this.player = {
+          x: 1800,
+          y: 1800,
+          vx: 0,
+          vy: 0,
+          angle: 0,
+          radius: 18,
+          hp: 100,
+          maxHp: 100,
+          shield: 80,
+          maxShield: 80,
+          shieldRechargeTimer: 0,
+          energy: 100,
+          maxEnergy: 100,
+          level: 1,
+          xp: 0,
+          xpToNext: 100,
+          damage: 24,
+          speed: 340,
+          critChance: 0.1,
+          critMult: 2.0,
+          fireCooldown: 0,
+          fireInterval: 0.18,
+          abilityCooldown: 0,
+          abilityMaxCooldown: 10,
+          kills: 0,
+          magnetRadius: 150
+        };
+
+        // Upgrades Levels
+        this.upgrades = {
+          engine: 0,
+          weapons: 0,
+          shields: 0,
+          armor: 0,
+          reactor: 0,
+          sensors: 0
+        };
+
+        // Resources
+        this.resources = {
+          crystals: 30,
+          metal: 15,
+          cores: 0,
+          matter: 0
+        };
+
+        // Inventory / Artifacts acquired (IDs)
+        this.artifacts = [];
+
+        // Mission Progress
+        this.currentMissionIndex = 0;
+        this.missionCoresCollected = 0;
+
+        // Camera
+        this.camera = {
+          x: 1800,
+          y: 1800,
+          zoom: 1.0,
+          targetZoom: 1.0,
+          shake: 0,
+          lookaheadDist: 65
+        };
+
+        // Input
+        this.keys = {};
+        this.mouse = { x: 0, y: 0, worldX: 0, worldY: 0, isDown: false };
+
+        // Entities
+        this.stars = [];
+        this.planets = [];
+        this.sceneryObjects = [];
+        this.storms = [];
+        this.activeStorm = null;
+        this.asteroids = [];
+        this.objects = []; // stations, monoliths, portals, chests
+        this.enemies = [];
+        this.projectiles = [];
+        this.particles = [];
+        this.floatingTexts = [];
+        this.currentBoss = null;
+
+        // Interactive object near player
+        this.nearObject = null;
+
+        this.lastTime = performance.now();
+        this.saveTimer = 0;
+
+        this.initDOM();
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        this.setupStars();
+        this.loadSave();
+        this.populateSector(this.currentZone);
+
+        // Start Loop
+        requestAnimationFrame((t) => this.gameLoop(t));
+      }
+
+      resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+      }
+
+      setupStars() {
+        this.stars = [];
+        // Layer 0: Deep background faint stars (speed 0.08)
+        for (let i = 0; i < 220; i++) {
+          this.stars.push({
+            x: Math.random() * 2400,
+            y: Math.random() * 2400,
+            size: Math.random() * 1.2 + 0.6,
+            layer: 0,
+            speed: 0.08,
+            alpha: Math.random() * 0.5 + 0.25,
+            color: '#cbd5e1',
+            pulse: Math.random() * Math.PI * 2
+          });
+        }
+        // Layer 1: Midfield bright stars (speed 0.22)
+        for (let i = 0; i < 180; i++) {
+          const c = Math.random();
+          const col = c < 0.25 ? '#00f0ff' : (c < 0.4 ? '#ffd166' : '#ffffff');
+          this.stars.push({
+            x: Math.random() * 2400,
+            y: Math.random() * 2400,
+            size: Math.random() * 1.8 + 0.8,
+            layer: 1,
+            speed: 0.22,
+            alpha: Math.random() * 0.6 + 0.35,
+            color: col,
+            pulse: Math.random() * Math.PI * 2
+          });
+        }
+        // Layer 2: Foreground floating cosmic dust & micro-motes (speed 0.55)
+        for (let i = 0; i < 60; i++) {
+          this.stars.push({
+            x: Math.random() * 2400,
+            y: Math.random() * 2400,
+            size: Math.random() * 2.5 + 1.2,
+            layer: 2,
+            speed: 0.55,
+            alpha: Math.random() * 0.35 + 0.2,
+            color: '#38bdf8',
+            pulse: Math.random() * Math.PI * 2
+          });
+        }
+      }
+
+      populateSector(zoneId) {
+        this.currentZone = zoneId;
+        this.asteroids = [];
+        this.objects = [];
+        this.enemies = [];
+        this.planets = [];
+        this.sceneryObjects = [];
+        this.storms = [];
+        this.activeStorm = null;
+        this.currentBoss = null;
+
+        // Generate Procedural Cosmic Storms
+        const stormCount = zoneId === 4 ? 5 : (zoneId === 3 ? 4 : 3);
+        for (let i = 0; i < stormCount; i++) {
+          let sx = 0, sy = 0, dist = 0;
+          let attempts = 0;
+          do {
+            sx = 450 + Math.random() * (this.worldSize - 900);
+            sy = 450 + Math.random() * (this.worldSize - 900);
+            dist = Math.hypot(sx - 1800, sy - 1800);
+            attempts++;
+          } while (dist < 600 && attempts < 25);
+
+          const isIon = (i % 2 === 0);
+          this.storms.push({
+            id: `storm_${zoneId}_${i}`,
+            x: sx,
+            y: sy,
+            vx: (Math.random() - 0.5) * 14,
+            vy: (Math.random() - 0.5) * 14,
+            radius: 175 + Math.random() * 85,
+            type: isIon ? 'ion' : 'gravity',
+            name: isIon ? 'Ионный шторм' : 'Гравитационный шторм',
+            rotation: Math.random() * Math.PI * 2,
+            rotSpeed: (Math.random() - 0.5) * 0.35
+          });
+        }
+
+        const zone = ZONES[zoneId - 1];
+
+        // Celestial Planets & Space Scenery for the Sector
+        if (zoneId === 1) {
+          // Gas Giant Chronos with perspective rings
+          this.planets.push({
+            x: 900,
+            y: 900,
+            radius: 170,
+            color1: '#0077b6',
+            color2: '#023e8a',
+            atmosphere: 'rgba(0, 240, 255, 0.35)',
+            hasRings: true,
+            ringColor: 'rgba(0, 240, 255, 0.3)',
+            name: 'Газовый гигант «Хронос-I»'
+          });
+          // Research Outpost Helios-4
+          this.sceneryObjects.push({
+            x: 1600,
+            y: 1300,
+            type: 'station',
+            radius: 55,
+            name: 'Орбитальный аванпост «Гелиос-4»',
+            angle: 0,
+            rotSpeed: 0.04
+          });
+          // Derelict ship wreckage
+          this.sceneryObjects.push({
+            x: 2600,
+            y: 1100,
+            type: 'wreck',
+            radius: 35,
+            name: 'Обломки корвета «Стрела»',
+            angle: 1.2,
+            rotSpeed: -0.015
+          });
+        } else if (zoneId === 2) {
+          // Emerald World Echo-Prime
+          this.planets.push({
+            x: 2800,
+            y: 2600,
+            radius: 190,
+            color1: '#065f46',
+            color2: '#047857',
+            atmosphere: 'rgba(16, 185, 129, 0.35)',
+            hasRings: false,
+            name: 'Биосферный мир «Эхо-Прайм»'
+          });
+          this.sceneryObjects.push({
+            x: 1400,
+            y: 2400,
+            type: 'station',
+            radius: 60,
+            name: 'Релейная вышка Предтеч',
+            angle: 0.5,
+            rotSpeed: 0.03
+          });
+          this.sceneryObjects.push({
+            x: 1100,
+            y: 900,
+            type: 'wreck',
+            radius: 40,
+            name: 'Сбитый научный шаттл',
+            angle: 2.1,
+            rotSpeed: 0.02
+          });
+        } else if (zoneId === 3) {
+          // Shattered Moon Necro-7 with glowing fissures
+          this.planets.push({
+            x: 850,
+            y: 2700,
+            radius: 160,
+            color1: '#374151',
+            color2: '#1f2937',
+            atmosphere: 'rgba(157, 78, 221, 0.4)',
+            hasRings: true,
+            ringColor: 'rgba(157, 78, 221, 0.35)',
+            name: 'Расколотая луна «Некро-7»'
+          });
+          // Flotilla graveyard wrecks
+          this.sceneryObjects.push({
+            x: 1200,
+            y: 1700,
+            type: 'wreck',
+            radius: 48,
+            name: 'Секция дредноута «Левиафан»',
+            angle: 0.8,
+            rotSpeed: 0.01
+          });
+          this.sceneryObjects.push({
+            x: 2500,
+            y: 2000,
+            type: 'wreck',
+            radius: 42,
+            name: 'Разрушенный эсминец «Цербер»',
+            angle: 3.4,
+            rotSpeed: -0.02
+          });
+        } else if (zoneId === 4) {
+          // Space Singularity at center
+          this.planets.push({
+            x: 1800,
+            y: 1800,
+            radius: 145,
+            color1: '#18002e',
+            color2: '#090014',
+            atmosphere: 'rgba(199, 125, 255, 0.5)',
+            isSingularity: true,
+            name: 'Эпицентр Гравитационного Разлома'
+          });
+        }
+
+        // Asteroids Field with 3D depth and resources
+        for (let i = 0; i < 50; i++) {
+          this.asteroids.push({
+            x: Math.random() * (this.worldSize - 400) + 200,
+            y: Math.random() * (this.worldSize - 400) + 200,
+            radius: Math.random() * 24 + 14,
+            hp: 40,
+            maxHp: 40,
+            angle: Math.random() * Math.PI * 2,
+            rotSpeed: (Math.random() - 0.5) * 0.02,
+            hasResource: true
+          });
+        }
+
+        // Zone-specific POIs
+        if (zoneId === 1) {
+          // Forgotten Sector
+          this.objects.push({
+            id: 'poi_probe',
+            x: 2300,
+            y: 1900,
+            radius: 35,
+            type: 'probe',
+            name: 'Исследовательский зонд-7',
+            explored: false,
+            interactPrompt: '[E] Считать бортовой журнал',
+            text: '«Телеметрический пакет №402. Мы зафиксировали импульсы на частоте 4.19 ГГц из сектора Планеты Эхо. Они активировали спящие древние монолиты. Нам нужно отступать...»\n\nВы получили первый артефакт!',
+            rewardArt: 'art_abyss',
+            rewardRes: { crystals: 40, metal: 25 }
+          });
+
+          this.objects.push({
+            id: 'gate_zone2',
+            x: 3100,
+            y: 3100,
+            radius: 50,
+            type: 'gate',
+            name: 'Гипер-врата к Планете Эхо',
+            targetZone: 2,
+            interactPrompt: '[E] Совершить гипер-прыжок на Планету Эхо',
+            text: 'Врата настроены на координаты Планеты Эхо. Готовы совершить переход?'
+          });
+
+          // Regular caches
+          for (let i = 0; i < 4; i++) {
+            this.objects.push({
+              id: 'cache_1_' + i,
+              x: 1000 + Math.random() * 1600,
+              y: 1000 + Math.random() * 1600,
+              radius: 25,
+              type: 'cache',
+              name: 'Грузовой контейнер Альянса',
+              explored: false,
+              interactPrompt: '[E] Вскрыть контейнер',
+              text: 'Вскрытие замка... Обнаружены ценные минералы и фрагменты сплавов.',
+              rewardRes: { crystals: 25, metal: 20 }
+            });
+          }
+
+          // Initial enemies
+          for (let i = 0; i < 5; i++) {
+            this.spawnEnemy('scout', 1200 + Math.random() * 1400, 1200 + Math.random() * 1400);
+          }
+        } else if (zoneId === 2) {
+          // Planet Echo
+          this.objects.push({
+            id: 'poi_monolith',
+            x: 2200,
+            y: 1600,
+            radius: 40,
+            type: 'monolith',
+            name: 'Древний Монолит Предтеч',
+            explored: false,
+            interactPrompt: '[E] Синхронизировать матрицу',
+            text: 'Монолит вибрирует, отвечая на сигнал корабля. Из кристаллического пьедестала высвобождается пульсирующее энергетическое ядро!\n\nПолучен артефакт: Ядро Эха!',
+            rewardArt: 'art_echo',
+            rewardRes: { crystals: 50, cores: 1 }
+          });
+
+          this.objects.push({
+            id: 'gate_zone3',
+            x: 3200,
+            y: 800,
+            radius: 50,
+            type: 'gate',
+            name: 'Врата в Мертвый флот',
+            targetZone: 3,
+            lockedText: 'Врата требуют 3 энергетических ядра для активации!',
+            interactPrompt: '[E] Войти в сектор Мертвого флота',
+            text: 'Гипер-врата заряжены энергией ядер. Переход в сектор Мертвый флот открыт.'
+          });
+
+          for (let i = 0; i < 5; i++) {
+            this.objects.push({
+              id: 'echo_pod_' + i,
+              x: 800 + Math.random() * 2000,
+              y: 800 + Math.random() * 2000,
+              radius: 25,
+              type: 'cache',
+              name: 'Энергетическая капсула руин',
+              explored: false,
+              interactPrompt: '[E] Извлечь ядро',
+              text: 'Капсула содержит стабильное энергетическое ядро древних механизмов!',
+              rewardRes: { crystals: 30, cores: 1 }
+            });
+          }
+
+          for (let i = 0; i < 7; i++) {
+            this.spawnEnemy(i % 2 === 0 ? 'hunter' : 'scout', 1000 + Math.random() * 1600, 1000 + Math.random() * 1600);
+          }
+        } else if (zoneId === 3) {
+          // Dead Fleet
+          this.objects.push({
+            id: 'poi_flagship',
+            x: 1800,
+            y: 1400,
+            radius: 50,
+            type: 'flagship',
+            name: 'Остов крейсера «Аполлон»',
+            explored: false,
+            interactPrompt: '[E] Считать черный ящик флагмана',
+            text: '«Капитанский отчет: Существо на входе в Разлом неуязвимо для обычных торпед. Мы потеряли флот, пытаясь пробить его защитный барьер... Оставляем наше гипер-оружие тому, кто придет следом.»\n\nПолучен артефакт: Сердце Звезды!',
+            rewardArt: 'art_heart',
+            rewardRes: { metal: 60, matter: 1 }
+          });
+
+          this.objects.push({
+            id: 'gate_zone4',
+            x: 3000,
+            y: 3000,
+            radius: 55,
+            type: 'gate',
+            name: 'Портал в Разлом',
+            targetZone: 4,
+            lockedReqArt: 'art_key',
+            lockedText: 'Врата заблокированы био-кодом! Требуется «Ключ Создателей», охраняемый Стражем Разлома.',
+            interactPrompt: '[E] Войти в пространственный Разлом',
+            text: 'Ключ Создателей резонирует с вратами. Портал в Разлом стабилизирован!'
+          });
+
+          // Spawn Boss 1: Rift Guardian
+          this.spawnBoss('guardian', 2200, 2400);
+
+          for (let i = 0; i < 6; i++) {
+            this.spawnEnemy('guardian_drone', 1200 + Math.random() * 1400, 1200 + Math.random() * 1400);
+          }
+        } else if (zoneId === 4) {
+          // The Rift (Final Zone)
+          this.objects.push({
+            id: 'poi_singularity',
+            x: 1800,
+            y: 1800,
+            radius: 70,
+            type: 'rift_core',
+            name: 'Ядро Пространственного Разлома',
+            explored: false,
+            interactPrompt: '[E] Изучить источник сигнала',
+            text: 'Приборы зашкаливают! Прямо из червоточины материализуется трансцендентная сущность Предтеч — Создатель Сигнала!',
+            triggersBoss: true
+          });
+
+          // Spawn Final Boss: The Creator
+          this.spawnBoss('creator', 1800, 1400);
+        }
+
+        this.showNotification(`Вход в сектор: ${zone.name}`);
+        this.updateMissionHud();
+      }
+
+      spawnEnemy(type, x, y) {
+        const enemy = {
+          id: Math.random().toString(),
+          type,
+          x,
+          y,
+          vx: 0,
+          vy: 0,
+          angle: 0,
+          radius: type === 'guardian_drone' ? 22 : (type === 'hunter' ? 18 : 14),
+          hp: type === 'guardian_drone' ? 180 : (type === 'hunter' ? 90 : 45),
+          maxHp: type === 'guardian_drone' ? 180 : (type === 'hunter' ? 90 : 45),
+          speed: type === 'scout' ? 220 : (type === 'hunter' ? 170 : 110),
+          damage: type === 'guardian_drone' ? 18 : (type === 'hunter' ? 12 : 8),
+          fireCooldown: Math.random() * 1.5,
+          fireInterval: type === 'scout' ? 1.4 : (type === 'hunter' ? 1.8 : 2.5),
+          isElite: Math.random() < 0.2
+        };
+        if (enemy.isElite) {
+          enemy.hp *= 1.8;
+          enemy.maxHp *= 1.8;
+          enemy.radius += 3;
+        }
+        this.enemies.push(enemy);
+      }
+
+      spawnBoss(type, x, y) {
+        if (type === 'guardian') {
+          this.currentBoss = {
+            id: 'boss_guardian',
+            type: 'guardian',
+            name: 'Страж Разлома',
+            x,
+            y,
+            vx: 0,
+            vy: 0,
+            angle: 0,
+            radius: 50,
+            hp: 2400,
+            maxHp: 2400,
+            shield: 600,
+            maxShield: 600,
+            speed: 80,
+            phase: 1,
+            attackTimer: 0,
+            dropArtifact: 'art_key'
+          };
+        } else if (type === 'creator') {
+          this.currentBoss = {
+            id: 'boss_creator',
+            type: 'creator',
+            name: 'Создатель',
+            x,
+            y,
+            vx: 0,
+            vy: 0,
+            angle: 0,
+            radius: 65,
+            hp: 4800,
+            maxHp: 4800,
+            shield: 1200,
+            maxShield: 1200,
+            speed: 60,
+            phase: 1,
+            attackTimer: 0
+          };
+        }
+
+        const barWrap = document.getElementById('boss-bar-wrap');
+        const title = document.getElementById('boss-title');
+        title.innerText = this.currentBoss.name;
+        barWrap.style.display = 'block';
+        this.updateBossBar();
+      }
+
+      updateBossBar() {
+        if (!this.currentBoss) {
+          document.getElementById('boss-bar-wrap').style.display = 'none';
+          return;
+        }
+        const fill = document.getElementById('boss-fill');
+        const pct = Math.max(0, (this.currentBoss.hp / this.currentBoss.maxHp) * 100);
+        fill.style.width = pct + '%';
+      }
+
+      // --- Input & Listeners ---
+      initDOM() {
+        window.addEventListener('keydown', (e) => {
+          this.keys[e.code] = true;
+          if (e.code === 'KeyI') this.toggleModal('modal-inventory');
+          if (e.code === 'KeyU') this.toggleModal('modal-upgrades');
+          if (e.code === 'KeyE') this.handleInteract();
+          if (e.code === 'Escape') this.toggleModal('modal-pause');
+          if (e.code === 'Space' && this.state === 'PLAYING') this.triggerAbility();
+          if (e.code === 'Space' && this.state === 'INTRO') this.startGameplay();
+        });
+
+        window.addEventListener('keyup', (e) => {
+          this.keys[e.code] = false;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+          this.mouse.x = e.clientX;
+          this.mouse.y = e.clientY;
+        });
+
+        window.addEventListener('mousedown', (e) => {
+          if (e.button === 0) {
+            this.mouse.isDown = true;
+            audio.init();
+          }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+          if (e.button === 0) this.mouse.isDown = false;
+        });
+
+        // DOM Click buttons
+        document.getElementById('menu-start').onclick = () => {
+          audio.init();
+          this.showIntro();
+        };
+
+        document.getElementById('menu-continue').onclick = () => {
+          audio.init();
+          this.state = 'PLAYING';
+          this.closeAllModals();
+        };
+
+        document.getElementById('menu-controls').onclick = () => {
+          this.openModal('modal-controls-info');
+        };
+
+        document.getElementById('menu-lore').onclick = () => {
+          this.showIntro();
+        };
+
+        document.getElementById('menu-reset').onclick = () => {
+          if (confirm('Вы уверены, что хотите сбросить весь прогресс экспедиции?')) {
+            localStorage.removeItem('the_last_signal_save');
+            location.reload();
+          }
+        };
+
+        document.getElementById('intro-btn-play').onclick = () => {
+          this.startGameplay();
+        };
+
+        document.getElementById('pause-close').onclick = () => this.resumeGame();
+        document.getElementById('pause-resume').onclick = () => this.resumeGame();
+        document.getElementById('pause-inv').onclick = () => {
+          this.closeAllModals();
+          this.openModal('modal-inventory');
+        };
+        document.getElementById('pause-upg').onclick = () => {
+          this.closeAllModals();
+          this.openModal('modal-upgrades');
+        };
+        document.getElementById('pause-to-menu').onclick = () => {
+          this.closeAllModals();
+          this.openModal('modal-menu');
+          this.state = 'MENU';
+        };
+
+        document.getElementById('btn-inventory').onclick = () => this.toggleModal('modal-inventory');
+        document.getElementById('btn-upgrades').onclick = () => this.toggleModal('modal-upgrades');
+        document.getElementById('btn-pause').onclick = () => this.toggleModal('modal-pause');
+        document.getElementById('btn-audio').onclick = (e) => {
+          const on = audio.toggle();
+          e.target.innerText = on ? '🔊' : '🔇';
+        };
+
+        document.getElementById('inv-close').onclick = () => this.closeAllModals();
+        document.getElementById('upg-close').onclick = () => this.closeAllModals();
+        document.getElementById('inspect-close').onclick = () => this.closeAllModals();
+        document.getElementById('controls-close').onclick = () => this.closeAllModals();
+        document.getElementById('controls-ok').onclick = () => this.closeAllModals();
+
+        document.getElementById('btn-respawn').onclick = () => {
+          this.respawnPlayer();
+        };
+
+        document.getElementById('btn-victory-restart').onclick = () => {
+          localStorage.removeItem('the_last_signal_save');
+          location.reload();
+        };
+
+        document.getElementById('btn-victory-freeroam').onclick = () => {
+          this.closeAllModals();
+          this.state = 'PLAYING';
+        };
+      }
+
+      showIntro() {
+        this.closeAllModals();
+        this.openModal('modal-intro');
+        this.state = 'INTRO';
+      }
+
+      startGameplay() {
+        this.closeAllModals();
+        this.state = 'PLAYING';
+        audio.init();
+      }
+
+      resumeGame() {
+        this.closeAllModals();
+        this.state = 'PLAYING';
+      }
+
+      openModal(id) {
+        document.getElementById(id).style.display = 'flex';
+        if (id === 'modal-inventory') this.renderInventory();
+        if (id === 'modal-upgrades') this.renderUpgrades();
+      }
+
+      closeAllModals() {
+        document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+      }
+
+      toggleModal(id) {
+        const el = document.getElementById(id);
+        if (el.style.display === 'flex') {
+          el.style.display = 'none';
+          if (this.state === 'PAUSE') this.state = 'PLAYING';
+        } else {
+          this.closeAllModals();
+          this.openModal(id);
+          this.state = 'PAUSE';
+        }
+      }
+
+      showNotification(msg) {
+        const b = document.getElementById('notif-banner');
+        b.innerText = msg;
+        b.style.display = 'block';
+        clearTimeout(this._notifTimeout);
+        this._notifTimeout = setTimeout(() => {
+          b.style.display = 'none';
+        }, 2800);
+      }
+
+      // --- Progression & Missions ---
+      updateMissionHud() {
+        const mission = MISSIONS[this.currentMissionIndex];
+        if (!mission) return;
+        document.getElementById('mission-title').innerText = mission.title;
+        let desc = mission.desc;
+        if (mission.reqCores) {
+          desc += ` [${this.resources.cores} / ${mission.reqCores}]`;
+        }
+        document.getElementById('mission-desc').innerText = desc;
+      }
+
+      checkMissionProgress() {
+        const m = MISSIONS[this.currentMissionIndex];
+        if (!m) return;
+        if (m.id === 1 && this.artifacts.includes('art_abyss')) {
+          this.advanceMission();
+        } else if (m.id === 2 && this.artifacts.includes('art_echo')) {
+          this.advanceMission();
+        } else if (m.id === 3 && this.resources.cores >= 3) {
+          this.advanceMission();
+        } else if (m.id === 4 && this.artifacts.includes('art_key')) {
+          this.advanceMission();
+        }
+      }
+
+      advanceMission() {
+        this.currentMissionIndex++;
+        audio.playArtifactChime();
+        this.showNotification('Миссия обновлена!');
+        this.updateMissionHud();
+        this.saveGame();
+      }
+
+      // --- Interaction & Exploration ---
+      handleInteract() {
+        if (!this.nearObject || this.state !== 'PLAYING') return;
+        const obj = this.nearObject;
+
+        if (obj.type === 'gate') {
+          // Gate transition
+          if (obj.lockedReqArt && !this.artifacts.includes(obj.lockedReqArt)) {
+            alert(obj.lockedText);
+            return;
+          }
+          if (obj.targetZone === 3 && this.resources.cores < 3) {
+            alert(obj.lockedText);
+            return;
+          }
+          this.populateSector(obj.targetZone);
+          this.player.x = 1800;
+          this.player.y = 1800;
+          this.checkMissionProgress();
+          return;
+        }
+
+        // POI Inspection modal
+        const modal = document.getElementById('modal-inspect');
+        document.getElementById('inspect-title').innerText = obj.name;
+        document.getElementById('inspect-body').innerText = obj.text;
+
+        const actionBtn = document.getElementById('inspect-action');
+        actionBtn.onclick = () => {
+          this.closeAllModals();
+          this.state = 'PLAYING';
+
+          if (!obj.explored) {
+            obj.explored = true;
+            if (obj.rewardArt && !this.artifacts.includes(obj.rewardArt)) {
+              this.artifacts.push(obj.rewardArt);
+              this.applyArtifactBonuses();
+              audio.playArtifactChime();
+              this.showNotification(`Получен артефакт: ${ARTIFACTS_DEF.find(a => a.id === obj.rewardArt).name}!`);
+            }
+            if (obj.rewardRes) {
+              if (obj.rewardRes.crystals) this.resources.crystals += obj.rewardRes.crystals;
+              if (obj.rewardRes.metal) this.resources.metal += obj.rewardRes.metal;
+              if (obj.rewardRes.cores) this.resources.cores += obj.rewardRes.cores;
+              if (obj.rewardRes.matter) this.resources.matter += obj.rewardRes.matter;
+              audio.playPickup();
+            }
+            this.addXp(60);
+            this.checkMissionProgress();
+            this.saveGame();
+          }
+        };
+
+        this.openModal('modal-inspect');
+        this.state = 'PAUSE';
+      }
+
+      applyArtifactBonuses() {
+        // Reset base stats modified by artifacts
+        let extraEnergy = 0;
+        let speedMult = 1.0;
+        let dmgMult = 1.0;
+        let critBonus = 0;
+        let cdMult = 1.0;
+
+        if (this.artifacts.includes('art_abyss')) extraEnergy += 35;
+        if (this.artifacts.includes('art_echo')) speedMult += 0.3;
+        if (this.artifacts.includes('art_heart')) { dmgMult += 0.35; critBonus += 0.2; }
+        if (this.artifacts.includes('art_chrono')) cdMult *= 0.6;
+
+        this.player.maxEnergy = 100 + this.upgrades.reactor * 25 + extraEnergy;
+        this.player.speed = (340 + this.upgrades.engine * 35) * speedMult;
+        this.player.damage = (24 + this.upgrades.weapons * 8) * dmgMult;
+        this.player.critChance = 0.1 + this.upgrades.weapons * 0.04 + critBonus;
+        this.player.abilityMaxCooldown = 10 * cdMult;
+      }
+
+      getLevelTip(lvl) {
+        const tips = [
+          'Не забывайте улучшать щит и орудия в Инженерном отсеке [U] за собранные ресурсы.',
+          'Форсаж на [Shift] развивает предельную скорость и помогает уходить от плотного огня.',
+          'Импульс «ЭМИ-Вспышка» на [Space] нейтрализует все вражеские снаряды вокруг корабля.',
+          'Враги с золотой аурой — элитные. С них выпадает значительно больше минералов и сплавов.',
+          'Энергетический щит начинает перезаряжаться, если вы не получаете урон 3.5 секунды.',
+          'Исследуйте аномалии и руины [E] — древние артефакты наделяют корабль мощными бонусами.',
+          'Расстреливайте астероиды со светящимися жилами для быстрой добычи кристаллов и металла.',
+          'Проверяйте Инвентарь [I], чтобы просмотреть характеристики и лор найденных артефактов.',
+          'Улучшение плазменных орудий [U] также увеличивает вероятность критических попаданий.',
+          'Магнитные сенсоры [U] увеличивают радиус автоматического сбора ресурсов в космосе.',
+          'В секторе «Разлом» гравитационные вихри притягивают выстрелы — маневрируйте активнее!'
+        ];
+        const index = Math.max(0, (lvl - 2) % tips.length);
+        return tips[index];
+      }
+
+      showLevelUpTip(lvl) {
+        const toast = document.getElementById('level-tip-toast');
+        const tipTitle = document.getElementById('tip-title');
+        const tipText = document.getElementById('tip-text');
+        if (!toast || !tipTitle || !tipText) return;
+
+        tipTitle.innerText = `Бортовой совет // Уровень ${lvl}`;
+        tipText.innerText = this.getLevelTip(lvl);
+
+        // Reset and trigger smooth 2-second opacity animation
+        toast.classList.remove('animate-tip');
+        void toast.offsetWidth; // Force CSS reflow
+        toast.classList.add('animate-tip');
+
+        clearTimeout(this._tipTimeout);
+        this._tipTimeout = setTimeout(() => {
+          toast.classList.remove('animate-tip');
+        }, 2000);
+      }
+
+      addXp(amount) {
+        this.player.xp += amount;
+        if (this.player.xp >= this.player.xpToNext) {
+          this.player.xp -= this.player.xpToNext;
+          this.player.level++;
+          this.player.xpToNext = Math.floor(this.player.xpToNext * 1.5);
+          this.player.hp = this.player.maxHp;
+          this.player.shield = this.player.maxShield;
+          this.player.energy = this.player.maxEnergy;
+          this.showNotification(`УРОВЕНЬ ПОВЫШЕН: ${this.player.level}!`);
+          this.showLevelUpTip(this.player.level);
+          audio.playArtifactChime();
+        }
+      }
+
+      triggerAbility() {
+        if (this.player.abilityCooldown > 0) return;
+        if (this.player.energy < 25) {
+          this.showNotification('Недостаточно энергии!');
+          return;
+        }
+
+        this.player.energy -= 25;
+        this.player.abilityCooldown = this.player.abilityMaxCooldown;
+        audio.playEmp();
+        this.camera.shake = 15;
+
+        // Wave clearing bullets and damaging nearby enemies
+        const pulseRadius = 320;
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+          const p = this.projectiles[i];
+          if (p.isEnemy) {
+            const d = Math.hypot(p.x - this.player.x, p.y - this.player.y);
+            if (d < pulseRadius) {
+              this.projectiles.splice(i, 1);
+            }
+          }
+        }
+
+        this.enemies.forEach(e => {
+          const d = Math.hypot(e.x - this.player.x, e.y - this.player.y);
+          if (d < pulseRadius) {
+            e.hp -= 160;
+            this.createFloatingText(e.x, e.y, '160 EMP', '#00f0ff');
+            // Knockback
+            const ang = Math.atan2(e.y - this.player.y, e.x - this.player.x);
+            e.vx += Math.cos(ang) * 300;
+            e.vy += Math.sin(ang) * 300;
+          }
+        });
+
+        if (this.currentBoss) {
+          const d = Math.hypot(this.currentBoss.x - this.player.x, this.currentBoss.y - this.player.y);
+          if (d < pulseRadius + this.currentBoss.radius) {
+            this.currentBoss.hp -= 200;
+            this.createFloatingText(this.currentBoss.x, this.currentBoss.y, '200 EMP', '#00f0ff');
+          }
+        }
+
+        // Ring particles
+        for (let a = 0; a < Math.PI * 2; a += 0.2) {
+          this.particles.push({
+            x: this.player.x,
+            y: this.player.y,
+            vx: Math.cos(a) * 400,
+            vy: Math.sin(a) * 400,
+            color: '#00f0ff',
+            life: 0.45,
+            maxLife: 0.45,
+            size: 3
+          });
+        }
+      }
+
+      // --- Modals Renderers ---
+      renderInventory() {
+        const list = document.getElementById('artifact-list');
+        list.innerHTML = '';
+        ARTIFACTS_DEF.forEach(art => {
+          const has = this.artifacts.includes(art.id);
+          const slot = document.createElement('div');
+          slot.className = `artifact-slot ${has ? 'filled rarity-' + art.rarity : ''}`;
+          slot.innerHTML = `
+            <div class="art-icon">${has ? art.icon : '❓'}</div>
+            <div class="art-name">${has ? art.name : 'Неизвестно'}</div>
+          `;
+          slot.onclick = () => {
+            const details = document.getElementById('artifact-details');
+            if (has) {
+              details.innerHTML = `
+                <div style="font-weight:700; color:#fff; font-size:14px; margin-bottom:4px;">${art.name} <span style="font-size:11px; text-transform:uppercase; color:var(--cyan)">[${art.rarity}]</span></div>
+                <div style="color:#cbd5e1; margin-bottom:6px;">${art.desc}</div>
+              `;
+            } else {
+              details.innerHTML = `<div style="color:#94a3b8;">Артефакт еще не найден. Исследуйте космические руины и уничтожайте боссов секторов.</div>`;
+            }
+          };
+          list.appendChild(slot);
+        });
+      }
+
+      renderUpgrades() {
+        const cont = document.getElementById('upgrade-items-container');
+        cont.innerHTML = '';
+
+        const upgDefs = [
+          { key: 'engine', name: 'Тяговые двигатели', desc: '+15% скорость полета и ускорение', costCrystals: 25, costMetal: 15 },
+          { key: 'weapons', name: 'Плазменные орудия', desc: '+25% урон орудий и шанс критического выстрела', costCrystals: 30, costMetal: 20 },
+          { key: 'shields', name: 'Щитовой генератор', desc: '+25 макс. щит и скорость перезарядки', costCrystals: 20, costMetal: 15 },
+          { key: 'armor', name: 'Титановый корпус', desc: '+30 прочность корпуса (HP)', costCrystals: 15, costMetal: 30 },
+          { key: 'reactor', name: 'Реактор синтеза', desc: '+25 запас энергии и скорость восстановления', costCrystals: 35, costMetal: 25 },
+          { key: 'sensors', name: 'Сенсоры и Магнит', desc: 'Увеличивает радиус сбора ресурсов и дроп', costCrystals: 20, costMetal: 20 }
+        ];
+
+        upgDefs.forEach(u => {
+          const lvl = this.upgrades[u.key];
+          const costMult = Math.pow(1.6, lvl);
+          const reqC = Math.round(u.costCrystals * costMult);
+          const reqM = Math.round(u.costMetal * costMult);
+
+          const canAfford = this.resources.crystals >= reqC && this.resources.metal >= reqM && lvl < 5;
+
+          const card = document.createElement('div');
+          card.className = 'upgrade-card';
+          card.innerHTML = `
+            <div class="upg-info">
+              <div class="upg-name">${u.name} <span class="upg-lvl">Ур. ${lvl} / 5</span></div>
+              <div class="upg-desc">${u.desc}</div>
+              <div style="font-size:11px; margin-top:4px; color:#94a3b8;">
+                Цена: <span style="color:#00f0ff;">${reqC} кристаллов</span> · <span style="color:#cbd5e1;">${reqM} металла</span>
+              </div>
+            </div>
+            <button class="upg-btn" ${!canAfford ? 'disabled' : ''}>
+              ${lvl >= 5 ? 'МАКСИМУМ' : 'Улучшить'}
+            </button>
+          `;
+
+          card.querySelector('button').onclick = () => {
+            if (canAfford) {
+              this.resources.crystals -= reqC;
+              this.resources.metal -= reqM;
+              this.upgrades[u.key]++;
+              this.applyUpgrades();
+              audio.playPickup();
+              this.renderUpgrades();
+              this.saveGame();
+            }
+          };
+
+          cont.appendChild(card);
+        });
+      }
+
+      applyUpgrades() {
+        this.player.maxHp = 100 + this.upgrades.armor * 30;
+        this.player.maxShield = 80 + this.upgrades.shields * 25;
+        this.player.magnetRadius = 150 + this.upgrades.sensors * 45;
+        this.applyArtifactBonuses();
+      }
+
+      // --- Saving System ---
+      saveGame() {
+        const data = {
+          zone: this.currentZone,
+          player: {
+            hp: this.player.hp,
+            level: this.player.level,
+            xp: this.player.xp,
+            kills: this.player.kills
+          },
+          resources: this.resources,
+          upgrades: this.upgrades,
+          artifacts: this.artifacts,
+          missionIdx: this.currentMissionIndex
+        };
+        localStorage.setItem('the_last_signal_save', JSON.stringify(data));
+      }
+
+      loadSave() {
+        const raw = localStorage.getItem('the_last_signal_save');
+        if (!raw) return;
+        try {
+          const d = JSON.parse(raw);
+          this.currentZone = d.zone || 1;
+          if (d.player) {
+            this.player.level = d.player.level || 1;
+            this.player.xp = d.player.xp || 0;
+            this.player.kills = d.player.kills || 0;
+          }
+          if (d.resources) this.resources = d.resources;
+          if (d.upgrades) this.upgrades = d.upgrades;
+          if (d.artifacts) this.artifacts = d.artifacts;
+          if (d.missionIdx !== undefined) this.currentMissionIndex = d.missionIdx;
+
+          this.applyUpgrades();
+          document.getElementById('menu-continue').style.display = 'block';
+          document.getElementById('menu-reset').style.display = 'block';
+        } catch(e) {
+          console.warn('Corrupt save', e);
+        }
+      }
+
+      respawnPlayer() {
+        this.closeAllModals();
+        this.player.hp = this.player.maxHp;
+        this.player.shield = this.player.maxShield;
+        this.player.energy = this.player.maxEnergy;
+        this.player.x = 1800;
+        this.player.y = 1800;
+        this.player.vx = 0;
+        this.player.vy = 0;
+        this.state = 'PLAYING';
+      }
+
+      // --- Update Loop ---
+      update(dt) {
+        if (this.state !== 'PLAYING') return;
+
+        // Auto Save tick
+        this.saveTimer += dt;
+        if (this.saveTimer > 5.0) {
+          this.saveTimer = 0;
+          this.saveGame();
+        }
+
+        // Cooldowns
+        if (this.player.fireCooldown > 0) this.player.fireCooldown -= dt;
+        if (this.player.abilityCooldown > 0) {
+          this.player.abilityCooldown -= dt;
+          document.getElementById('ability-status').innerText = `${Math.ceil(this.player.abilityCooldown)}с`;
+          document.getElementById('ability-icon').classList.remove('ability-ready');
+        } else {
+          document.getElementById('ability-status').innerText = 'Готово к пуску';
+          document.getElementById('ability-icon').classList.add('ability-ready');
+        }
+
+        // Update Cosmic Storms & Detect Player Hazard Entry
+        let currentStorm = null;
+        for (let s of this.storms) {
+          s.x += s.vx * dt;
+          s.y += s.vy * dt;
+          s.rotation += s.rotSpeed * dt;
+
+          // Bounce off sector perimeter
+          if (s.x < s.radius + 100) { s.x = s.radius + 100; s.vx = Math.abs(s.vx); }
+          if (s.x > this.worldSize - s.radius - 100) { s.x = this.worldSize - s.radius - 100; s.vx = -Math.abs(s.vx); }
+          if (s.y < s.radius + 100) { s.y = s.radius + 100; s.vy = Math.abs(s.vy); }
+          if (s.y > this.worldSize - s.radius - 100) { s.y = this.worldSize - s.radius - 100; s.vy = -Math.abs(s.vy); }
+
+          const dist = Math.hypot(this.player.x - s.x, this.player.y - s.y);
+          if (dist < s.radius) {
+            currentStorm = s;
+          }
+        }
+
+        if (currentStorm && this.activeStorm !== currentStorm) {
+          audio.playStormWarning();
+          this.showNotification(`Внимание! Вход в зону: ${currentStorm.name}`);
+        }
+        this.activeStorm = currentStorm;
+        this.updateStormHud(currentStorm);
+
+        // Health regen artifact
+        if (this.artifacts.includes('art_nanite')) {
+          this.player.hp = Math.min(this.player.maxHp, this.player.hp + 3 * dt);
+        }
+
+        // Shields recharge logic (Suppressed inside Ion Storms)
+        if (currentStorm && currentStorm.type === 'ion') {
+          if (this.player.shield > 0) {
+            this.player.shield = 0;
+            audio.playEmp();
+            this.createFloatingText(this.player.x, this.player.y - 20, 'ЩИТЫ ПОДАВЛЕНЫ!', '#00f0ff');
+          }
+          this.player.shieldRechargeTimer = 2.0;
+
+          // Electric discharge sparks around ship
+          if (Math.random() < 0.35) {
+            this.particles.push({
+              x: this.player.x + (Math.random() - 0.5) * 32,
+              y: this.player.y + (Math.random() - 0.5) * 32,
+              vx: (Math.random() - 0.5) * 80,
+              vy: (Math.random() - 0.5) * 80,
+              color: Math.random() < 0.5 ? '#00f0ff' : '#a855f7',
+              life: 0.2,
+              maxLife: 0.2,
+              size: 2.5
+            });
+          }
+        } else if (this.player.shieldRechargeTimer > 0) {
+          this.player.shieldRechargeTimer -= dt;
+        } else {
+          const rate = 15 * (1 + this.upgrades.shields * 0.25);
+          this.player.shield = Math.min(this.player.maxShield, this.player.shield + rate * dt);
+        }
+
+        // Energy recharge
+        const boostActive = this.keys['ShiftLeft'] || this.keys['ShiftRight'];
+        if (!boostActive) {
+          const eRate = 22 * (this.artifacts.includes('art_abyss') ? 1.5 : 1.0);
+          this.player.energy = Math.min(this.player.maxEnergy, this.player.energy + eRate * dt);
+        }
+
+        // Movement Physics
+        let ax = 0;
+        let ay = 0;
+        if (this.keys['KeyW'] || this.keys['ArrowUp']) ay -= 1;
+        if (this.keys['KeyS'] || this.keys['ArrowDown']) ay += 1;
+        if (this.keys['KeyA'] || this.keys['ArrowLeft']) ax -= 1;
+        if (this.keys['KeyD'] || this.keys['ArrowRight']) ax += 1;
+
+        if (ax !== 0 && ay !== 0) {
+          ax *= 0.7071;
+          ay *= 0.7071;
+        }
+
+        let curSpeed = this.player.speed;
+
+        // Gravitational Storm drag deceleration
+        if (currentStorm && currentStorm.type === 'gravity') {
+          curSpeed *= 0.42; // slows ship by 58%
+          if (Math.random() < 0.35) {
+            this.particles.push({
+              x: this.player.x + (Math.random() - 0.5) * 24,
+              y: this.player.y + (Math.random() - 0.5) * 24,
+              vx: -this.player.vx * 0.25 + (Math.random() - 0.5) * 30,
+              vy: -this.player.vy * 0.25 + (Math.random() - 0.5) * 30,
+              color: '#f59e0b',
+              life: 0.25,
+              maxLife: 0.25,
+              size: 3
+            });
+          }
+        }
+        if (boostActive && this.player.energy > 5 && (ax !== 0 || ay !== 0)) {
+          curSpeed *= 1.8;
+          this.player.energy -= 20 * dt;
+
+          // Thruster flame particles
+          this.particles.push({
+            x: this.player.x - Math.cos(this.player.angle) * 15 + (Math.random() - 0.5) * 6,
+            y: this.player.y - Math.sin(this.player.angle) * 15 + (Math.random() - 0.5) * 6,
+            vx: -Math.cos(this.player.angle) * 200 + (Math.random() - 0.5) * 40,
+            vy: -Math.sin(this.player.angle) * 200 + (Math.random() - 0.5) * 40,
+            color: Math.random() < 0.5 ? '#ffb703' : '#ff2a5f',
+            life: 0.25,
+            maxLife: 0.25,
+            size: 3.5
+          });
+        }
+
+        const accel = 900;
+        this.player.vx += ax * accel * dt;
+        this.player.vy += ay * accel * dt;
+
+        // Friction / drag
+        this.player.vx *= Math.pow(0.08, dt);
+        this.player.vy *= Math.pow(0.08, dt);
+
+        // Clamp speed
+        const vLen = Math.hypot(this.player.vx, this.player.vy);
+        if (vLen > curSpeed) {
+          this.player.vx = (this.player.vx / vLen) * curSpeed;
+          this.player.vy = (this.player.vy / vLen) * curSpeed;
+        }
+
+        this.player.x += this.player.vx * dt;
+        this.player.y += this.player.vy * dt;
+
+        // World Bounds
+        this.player.x = Math.max(40, Math.min(this.worldSize - 40, this.player.x));
+        this.player.y = Math.max(40, Math.min(this.worldSize - 40, this.player.y));
+
+        // Dynamic Camera: Responsive Zoom & Smooth Lookahead Top-Down Tracking
+        this.camera.targetZoom = boostActive ? 0.92 : 1.0;
+        this.camera.zoom += (this.camera.targetZoom - this.camera.zoom) * 3.0 * dt;
+
+        // Lookahead leading into player flight velocity and aiming direction
+        const lookX = Math.cos(this.player.angle) * this.camera.lookaheadDist + this.player.vx * 0.22;
+        const lookY = Math.sin(this.player.angle) * this.camera.lookaheadDist + this.player.vy * 0.22;
+        const targetCamX = this.player.x + lookX;
+        const targetCamY = this.player.y + lookY;
+
+        // Smooth camera lerp / dampening (tracks player in all directions)
+        this.camera.x += (targetCamX - this.camera.x) * 4.8 * dt;
+        this.camera.y += (targetCamY - this.camera.y) * 4.8 * dt;
+
+        // Automatically clamp camera to the boundaries of the sector
+        const halfViewW = (this.canvas.width * 0.5) / this.camera.zoom;
+        const halfViewH = (this.canvas.height * 0.5) / this.camera.zoom;
+        if (this.worldSize > halfViewW * 2) {
+          this.camera.x = Math.max(halfViewW, Math.min(this.worldSize - halfViewW, this.camera.x));
+        }
+        if (this.worldSize > halfViewH * 2) {
+          this.camera.y = Math.max(halfViewH, Math.min(this.worldSize - halfViewH, this.camera.y));
+        }
+
+        if (this.camera.shake > 0) {
+          this.camera.shake -= dt * 25;
+          if (this.camera.shake < 0) this.camera.shake = 0;
+        }
+
+        // Aim angle towards mouse world coordinates accounting for camera zoom and lookahead
+        const screenCenterX = this.canvas.width / 2;
+        const screenCenterY = this.canvas.height / 2;
+        this.mouse.worldX = this.camera.x + (this.mouse.x - screenCenterX) / this.camera.zoom;
+        this.mouse.worldY = this.camera.y + (this.mouse.y - screenCenterY) / this.camera.zoom;
+        this.player.angle = Math.atan2(this.mouse.worldY - this.player.y, this.mouse.worldX - this.player.x);
+
+        // Update scenery rotations
+        for (let sc of this.sceneryObjects) {
+          sc.angle += (sc.rotSpeed || 0.01) * dt;
+        }
+
+        // Engine Trail when moving
+        if (vLen > 20) {
+          this.particles.push({
+            x: this.player.x - Math.cos(this.player.angle) * 16,
+            y: this.player.y - Math.sin(this.player.angle) * 16,
+            vx: -Math.cos(this.player.angle) * 80 + (Math.random() - 0.5) * 20,
+            vy: -Math.sin(this.player.angle) * 80 + (Math.random() - 0.5) * 20,
+            color: '#00f0ff',
+            life: 0.2,
+            maxLife: 0.2,
+            size: 2
+          });
+        }
+
+        // Auto Fire
+        if (this.mouse.isDown && this.player.fireCooldown <= 0) {
+          this.playerShoot();
+          this.player.fireCooldown = this.player.fireInterval;
+        }
+
+        // Update Projectiles
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+          const p = this.projectiles[i];
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.life -= dt;
+
+          // Check collisions
+          let removed = false;
+          if (p.life <= 0) {
+            this.projectiles.splice(i, 1);
+            continue;
+          }
+
+          if (!p.isEnemy) {
+            // Player bullet hits enemies
+            for (let j = this.enemies.length - 1; j >= 0; j--) {
+              const e = this.enemies[j];
+              const dist = Math.hypot(p.x - e.x, p.y - e.y);
+              if (dist < e.radius + p.radius) {
+                const isCrit = Math.random() < this.player.critChance;
+                const dmg = isCrit ? p.damage * this.player.critMult : p.damage;
+                e.hp -= dmg;
+                audio.playLaser(true);
+
+                this.createFloatingText(e.x, e.y, Math.round(dmg).toString(), isCrit ? '#ffb703' : '#fff');
+                this.createImpactSparks(p.x, p.y, p.color);
+
+                if (e.hp <= 0) {
+                  this.killEnemy(j);
+                }
+                this.projectiles.splice(i, 1);
+                removed = true;
+                break;
+              }
+            }
+
+            // Hit Boss
+            if (!removed && this.currentBoss) {
+              const b = this.currentBoss;
+              const dist = Math.hypot(p.x - b.x, p.y - b.y);
+              if (dist < b.radius + p.radius) {
+                const isCrit = Math.random() < this.player.critChance;
+                const dmg = isCrit ? p.damage * this.player.critMult : p.damage;
+                if (b.shield && b.shield > 0) {
+                  b.shield -= dmg;
+                  this.createFloatingText(b.x, b.y, Math.round(dmg).toString(), '#00f0ff');
+                } else {
+                  b.hp -= dmg;
+                  this.createFloatingText(b.x, b.y, Math.round(dmg).toString(), isCrit ? '#ffb703' : '#fff');
+                }
+                this.updateBossBar();
+                this.createImpactSparks(p.x, p.y, '#00f0ff');
+
+                if (b.hp <= 0) {
+                  this.killBoss();
+                }
+                this.projectiles.splice(i, 1);
+                removed = true;
+              }
+            }
+
+            // Hit Asteroids
+            if (!removed) {
+              for (let a of this.asteroids) {
+                if (Math.hypot(p.x - a.x, p.y - a.y) < a.radius) {
+                  a.hp -= p.damage;
+                  this.createImpactSparks(p.x, p.y, '#94a3b8');
+                  if (a.hp <= 0 && a.hasResource) {
+                    a.hasResource = false;
+                    this.spawnResourceDrop(a.x, a.y, 'crystals', 8 + Math.floor(Math.random() * 6));
+                    this.spawnResourceDrop(a.x, a.y, 'metal', 5 + Math.floor(Math.random() * 5));
+                    audio.playExplosion(false);
+                  }
+                  this.projectiles.splice(i, 1);
+                  break;
+                }
+              }
+            }
+          } else {
+            // Enemy bullet hits player
+            const dist = Math.hypot(p.x - this.player.x, p.y - this.player.y);
+            if (dist < this.player.radius + p.radius) {
+              this.damagePlayer(p.damage);
+              this.createImpactSparks(p.x, p.y, '#ff2a5f');
+              this.projectiles.splice(i, 1);
+            }
+          }
+        }
+
+        // Update Enemies AI
+        for (let i = 0; i < this.enemies.length; i++) {
+          const e = this.enemies[i];
+          const distToPlayer = Math.hypot(this.player.x - e.x, this.player.y - e.y);
+          e.angle = Math.atan2(this.player.y - e.y, this.player.x - e.x);
+
+          // AI movement
+          if (distToPlayer < 650) {
+            let targetDist = e.type === 'scout' ? 240 : (e.type === 'hunter' ? 140 : 280);
+            if (distToPlayer > targetDist + 30) {
+              e.vx += Math.cos(e.angle) * e.speed * dt * 3;
+              e.vy += Math.sin(e.angle) * e.speed * dt * 3;
+            } else if (distToPlayer < targetDist - 30) {
+              e.vx -= Math.cos(e.angle) * e.speed * dt * 2;
+              e.vy -= Math.sin(e.angle) * e.speed * dt * 2;
+            } else {
+              // Strafe
+              e.vx += -Math.sin(e.angle) * e.speed * dt * 1.5;
+              e.vy += Math.cos(e.angle) * e.speed * dt * 1.5;
+            }
+
+            // Shoot at player
+            e.fireCooldown -= dt;
+            if (e.fireCooldown <= 0) {
+              e.fireCooldown = e.fireInterval;
+              audio.playLaser(true);
+              this.projectiles.push({
+                x: e.x,
+                y: e.y,
+                vx: Math.cos(e.angle) * 350,
+                vy: Math.sin(e.angle) * 350,
+                radius: 4,
+                damage: e.damage,
+                life: 2.5,
+                color: '#ff2a5f',
+                isEnemy: true
+              });
+            }
+          }
+
+          e.vx *= Math.pow(0.2, dt);
+          e.vy *= Math.pow(0.2, dt);
+          e.x += e.vx * dt;
+          e.y += e.vy * dt;
+        }
+
+        // Boss AI Loop
+        if (this.currentBoss) {
+          const b = this.currentBoss;
+          const distToPlayer = Math.hypot(this.player.x - b.x, this.player.y - b.y);
+          b.angle = Math.atan2(this.player.y - b.y, this.player.x - b.x);
+
+          b.attackTimer += dt;
+
+          if (b.type === 'guardian') {
+            // Rift Guardian Boss
+            b.vx = Math.cos(b.angle) * b.speed;
+            b.vy = Math.sin(b.angle) * b.speed;
+            b.x += b.vx * dt;
+            b.y += b.vy * dt;
+
+            if (b.attackTimer > 2.2) {
+              b.attackTimer = 0;
+              // Radial ring attack
+              for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+                this.projectiles.push({
+                  x: b.x,
+                  y: b.y,
+                  vx: Math.cos(a) * 260,
+                  vy: Math.sin(a) * 260,
+                  radius: 5,
+                  damage: 15,
+                  life: 3.5,
+                  color: '#9d4edd',
+                  isEnemy: true
+                });
+              }
+              audio.playLaser(true);
+            }
+          } else if (b.type === 'creator') {
+            // The Creator Final Boss
+            b.x += Math.sin(performance.now() * 0.0015) * 50 * dt;
+            b.y += Math.cos(performance.now() * 0.0012) * 50 * dt;
+
+            if (b.attackTimer > 1.4) {
+              b.attackTimer = 0;
+              // Spiral plasma vortex
+              const baseAngle = (performance.now() * 0.003) % (Math.PI * 2);
+              for (let i = 0; i < 3; i++) {
+                const ang = baseAngle + (i * Math.PI * 2 / 3);
+                this.projectiles.push({
+                  x: b.x,
+                  y: b.y,
+                  vx: Math.cos(ang) * 280,
+                  vy: Math.sin(ang) * 280,
+                  radius: 6,
+                  damage: 22,
+                  life: 4,
+                  color: '#ff2a5f',
+                  isEnemy: true
+                });
+              }
+              audio.playLaser(true);
+            }
+          }
+        }
+
+        // Check POI Proximity
+        this.nearObject = null;
+        for (let obj of this.objects) {
+          const d = Math.hypot(this.player.x - obj.x, this.player.y - obj.y);
+          if (d < obj.radius + 60) {
+            this.nearObject = obj;
+            break;
+          }
+        }
+        const promptEl = document.getElementById('interact-prompt');
+        if (this.nearObject) {
+          promptEl.style.display = 'block';
+          promptEl.innerText = this.nearObject.interactPrompt || '[E] Исследовать';
+        } else {
+          promptEl.style.display = 'none';
+        }
+
+        // Update Particles
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+          const pt = this.particles[i];
+          pt.x += pt.vx * dt;
+          pt.y += pt.vy * dt;
+          pt.life -= dt;
+          if (pt.life <= 0) this.particles.splice(i, 1);
+        }
+
+        // Update Floating Texts
+        for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
+          const ft = this.floatingTexts[i];
+          ft.y -= 30 * dt;
+          ft.life -= dt;
+          if (ft.life <= 0) this.floatingTexts.splice(i, 1);
+        }
+
+        // Update HUD Values
+        this.updateHUD();
+      }
+
+      playerShoot() {
+        audio.playLaser(false);
+        const offsets = [-8, 8];
+        const normalAngle = this.player.angle + Math.PI / 2;
+
+        offsets.forEach(off => {
+          const px = this.player.x + Math.cos(this.player.angle) * 16 + Math.cos(normalAngle) * off;
+          const py = this.player.y + Math.sin(this.player.angle) * 16 + Math.sin(normalAngle) * off;
+
+          this.projectiles.push({
+            x: px,
+            y: py,
+            vx: Math.cos(this.player.angle) * 750,
+            vy: Math.sin(this.player.angle) * 750,
+            radius: 3.5,
+            damage: this.player.damage,
+            life: 1.2,
+            color: '#00f0ff',
+            isEnemy: false
+          });
+        });
+      }
+
+      damagePlayer(amount) {
+        this.camera.shake = 8;
+        this.player.shieldRechargeTimer = 3.5;
+
+        if (this.player.shield > 0) {
+          if (this.player.shield >= amount) {
+            this.player.shield -= amount;
+          } else {
+            const remainder = amount - this.player.shield;
+            this.player.shield = 0;
+            this.player.hp -= remainder;
+          }
+        } else {
+          this.player.hp -= amount;
+        }
+
+        if (this.player.hp <= 0) {
+          this.player.hp = 0;
+          this.killPlayer();
+        }
+      }
+
+      killPlayer() {
+        audio.playExplosion(true);
+        this.state = 'GAMEOVER';
+        this.openModal('modal-gameover');
+      }
+
+      killEnemy(index) {
+        const e = this.enemies[index];
+        audio.playExplosion(false);
+        this.enemies.splice(index, 1);
+        this.player.kills++;
+        this.addXp(e.isElite ? 45 : 20);
+
+        // Drops
+        this.spawnResourceDrop(e.x, e.y, 'crystals', Math.floor(Math.random() * 5) + 3);
+        if (Math.random() < 0.6) this.spawnResourceDrop(e.x, e.y, 'metal', Math.floor(Math.random() * 3) + 1);
+
+        // Particle burst
+        for (let i = 0; i < 16; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const s = Math.random() * 160 + 30;
+          this.particles.push({
+            x: e.x,
+            y: e.y,
+            vx: Math.cos(a) * s,
+            vy: Math.sin(a) * s,
+            color: Math.random() < 0.5 ? '#ff2a5f' : '#ffb703',
+            life: 0.5,
+            maxLife: 0.5,
+            size: 3
+          });
+        }
+      }
+
+      killBoss() {
+        const b = this.currentBoss;
+        audio.playExplosion(true);
+        this.camera.shake = 25;
+        this.currentBoss = null;
+        document.getElementById('boss-bar-wrap').style.display = 'none';
+
+        if (b.type === 'guardian') {
+          this.artifacts.push('art_key');
+          this.applyArtifactBonuses();
+          audio.playArtifactChime();
+          this.showNotification('Страж повержен! Получен: Ключ Создателей!');
+          this.checkMissionProgress();
+        } else if (b.type === 'creator') {
+          // Final Victory
+          audio.playArtifactChime();
+          document.getElementById('stat-kills').innerText = this.player.kills;
+          document.getElementById('stat-cores').innerText = this.resources.cores;
+          this.state = 'VICTORY';
+          this.openModal('modal-victory');
+        }
+      }
+
+      spawnResourceDrop(x, y, type, amount) {
+        if (type === 'crystals') this.resources.crystals += amount;
+        if (type === 'metal') this.resources.metal += amount;
+        if (type === 'cores') this.resources.cores += amount;
+        if (type === 'matter') this.resources.matter += amount;
+        audio.playPickup();
+      }
+
+      createFloatingText(x, y, text, color = '#fff') {
+        this.floatingTexts.push({ x, y, text, color, life: 0.8 });
+      }
+
+      createImpactSparks(x, y, color) {
+        for (let i = 0; i < 6; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const s = Math.random() * 100 + 40;
+          this.particles.push({
+            x, y,
+            vx: Math.cos(a) * s,
+            vy: Math.sin(a) * s,
+            color,
+            life: 0.2,
+            maxLife: 0.2,
+            size: 2
+          });
+        }
+      }
+
+      updateHUD() {
+        document.getElementById('txt-hp').innerText = `${Math.round(this.player.hp)} / ${this.player.maxHp}`;
+        document.getElementById('bar-hp').style.width = `${(this.player.hp / this.player.maxHp) * 100}%`;
+
+        document.getElementById('txt-shield').innerText = `${Math.round(this.player.shield)} / ${this.player.maxShield}`;
+        document.getElementById('bar-shield').style.width = `${(this.player.shield / this.player.maxShield) * 100}%`;
+
+        document.getElementById('txt-energy').innerText = `${Math.round(this.player.energy)} / ${this.player.maxEnergy}`;
+        document.getElementById('bar-energy').style.width = `${(this.player.energy / this.player.maxEnergy) * 100}%`;
+
+        document.getElementById('txt-lvl').innerText = this.player.level;
+        document.getElementById('txt-xp').innerText = `${this.player.xp} / ${this.player.xpToNext} XP`;
+        document.getElementById('bar-xp').style.width = `${(this.player.xp / this.player.xpToNext) * 100}%`;
+
+        document.getElementById('res-crystals').innerText = this.resources.crystals;
+        document.getElementById('res-metal').innerText = this.resources.metal;
+        document.getElementById('res-cores').innerText = this.resources.cores;
+        document.getElementById('res-matter').innerText = this.resources.matter;
+      }
+
+      updateStormHud(storm) {
+        const badge = document.getElementById('storm-warning-badge');
+        const title = document.getElementById('storm-badge-title');
+        const desc = document.getElementById('storm-badge-desc');
+        if (!badge || !title || !desc) return;
+
+        if (storm) {
+          badge.style.display = 'flex';
+          badge.className = 'storm-badge ' + storm.type;
+          if (storm.type === 'gravity') {
+            title.innerText = 'ГРАВИТАЦИОННЫЙ ШТОРМ';
+            desc.innerText = 'Тяга двигателей перегружена! Скорость снижена на 58%';
+          } else {
+            title.innerText = 'ИОННЫЙ ШТОРМ';
+            desc.innerText = 'Электромагнитная аномалия! Щиты полностью отключены';
+          }
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+
+      renderStorms(ctx) {
+        const time = performance.now() * 0.001;
+
+        for (let s of this.storms) {
+          ctx.save();
+          ctx.translate(s.x, s.y);
+
+          const isIon = s.type === 'ion';
+          const primaryColor = isIon ? '0, 240, 255' : '245, 158, 11';
+          const secondaryColor = isIon ? '168, 85, 247' : '217, 119, 6';
+
+          // 1. Outer Swirling Nebula Cloud
+          const cloudGrad = ctx.createRadialGradient(0, 0, s.radius * 0.15, 0, 0, s.radius);
+          cloudGrad.addColorStop(0, `rgba(${secondaryColor}, 0.45)`);
+          cloudGrad.addColorStop(0.5, `rgba(${primaryColor}, 0.25)`);
+          cloudGrad.addColorStop(0.85, `rgba(${secondaryColor}, 0.12)`);
+          cloudGrad.addColorStop(1, 'transparent');
+
+          ctx.fillStyle = cloudGrad;
+          ctx.beginPath();
+          ctx.arc(0, 0, s.radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // 2. Rotating Plasma Arms / Spiral Vortex
+          ctx.save();
+          ctx.rotate(s.rotation);
+          const arms = 4;
+          for (let i = 0; i < arms; i++) {
+            ctx.rotate((Math.PI * 2) / arms);
+            ctx.strokeStyle = `rgba(${primaryColor}, 0.35)`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(s.radius * 0.2, 0, s.radius * 0.65, 0, Math.PI * 0.7);
+            ctx.stroke();
+          }
+          ctx.restore();
+
+          // 2.5 Animated Spiral Particle Streams (Conduits flowing towards the vortex center)
+          const streamCount = isIon ? 4 : 3;
+          ctx.save();
+          for (let st = 0; st < streamCount; st++) {
+            const baseAngle = s.rotation * 1.5 + (st * Math.PI * 2) / streamCount;
+            ctx.beginPath();
+            const segments = 24;
+            for (let j = 0; j <= segments; j++) {
+              const tNorm = j / segments; // 0 (outer) to 1 (inner)
+              const r = s.radius * (0.95 - tNorm * 0.78);
+              // Logarithmic spiral twist towards center
+              const theta = baseAngle + tNorm * (isIon ? 3.4 : 2.6) * (s.rotSpeed >= 0 ? 1 : -1) - time * (isIon ? 1.6 : 1.1);
+              const px = Math.cos(theta) * r;
+              const py = Math.sin(theta) * r;
+              if (j === 0) ctx.moveTo(px, py);
+              else ctx.lineTo(px, py);
+            }
+            ctx.strokeStyle = `rgba(${primaryColor}, ${isIon ? 0.28 : 0.24})`;
+            ctx.lineWidth = isIon ? 1.8 : 2.5;
+            ctx.setLineDash([8, 10]);
+            ctx.lineDashOffset = -time * 42 * (s.rotSpeed >= 0 ? 1 : -1);
+            ctx.stroke();
+          }
+          ctx.setLineDash([]);
+          ctx.restore();
+
+          // 2.6 Random Animated Sparks & Particle Streams Moving in a Spiral towards Center
+          if (!s.sparks) {
+            s.sparks = [];
+            const sparkCount = 38;
+            const ionColors = ['#00f0ff', '#38bdf8', '#60a5fa', '#93c5fd', '#c084fc', '#ffffff'];
+            const gravColors = ['#f59e0b', '#fb923c', '#ff7800', '#ea580c', '#fbbf24', '#ffffff'];
+            const colList = isIon ? ionColors : gravColors;
+            for (let k = 0; k < sparkCount; k++) {
+              s.sparks.push({
+                distRatio: 0.12 + Math.random() * 0.86,
+                angle: Math.random() * Math.PI * 2,
+                spinRate: (isIon ? 2.5 : 1.8) * (0.8 + Math.random() * 0.5) * (s.rotSpeed >= 0 ? 1 : -1),
+                inwardRate: (isIon ? 0.30 : 0.24) * (0.8 + Math.random() * 0.45),
+                size: Math.random() * 2.2 + 1.1,
+                color: colList[Math.floor(Math.random() * colList.length)],
+                pulseOffset: Math.random() * Math.PI * 2
+              });
+            }
+            s.lastSparkUpdate = time;
+          }
+
+          const sdt = s.lastSparkUpdate ? Math.min(0.08, Math.max(0.001, time - s.lastSparkUpdate)) : 0.016;
+          s.lastSparkUpdate = time;
+
+          ctx.save();
+          for (let sp of s.sparks) {
+            // Spiral inward progression
+            sp.distRatio -= sp.inwardRate * sdt;
+            sp.angle += sp.spinRate * sdt;
+
+            // Reset spark to outer perimeter once it is swallowed by the central vortex eye
+            if (sp.distRatio <= 0.07) {
+              sp.distRatio = 0.94 + Math.random() * 0.05;
+              sp.angle = Math.random() * Math.PI * 2;
+              sp.size = Math.random() * 2.2 + 1.1;
+            }
+
+            const currentR = s.radius * sp.distRatio;
+            const currentA = sp.angle;
+            const sx = Math.cos(currentA) * currentR;
+            const sy = Math.sin(currentA) * currentR;
+
+            // Trailing tail streak along spiral orbit
+            const tailR = Math.min(s.radius * 0.98, currentR + sp.inwardRate * s.radius * 0.06);
+            const tailA = currentA - sp.spinRate * 0.04;
+            const tx = Math.cos(tailA) * tailR;
+            const ty = Math.sin(tailA) * tailR;
+
+            // Fade opacity at edges, peak during inward spiral
+            const edgeFade = Math.sin(sp.distRatio * Math.PI);
+            const alpha = Math.min(1, Math.max(0.15, edgeFade * 1.3)) * (0.75 + Math.sin(time * 6 + sp.pulseOffset) * 0.25);
+
+            // Tail streak
+            ctx.strokeStyle = sp.color;
+            ctx.globalAlpha = alpha * 0.55;
+            ctx.lineWidth = sp.size * 0.8;
+            ctx.beginPath();
+            ctx.moveTo(tx, ty);
+            ctx.lineTo(sx, sy);
+            ctx.stroke();
+
+            // Glowing spark point
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = sp.color;
+            ctx.shadowColor = sp.color;
+            ctx.shadowBlur = isIon ? 9 : 7;
+            ctx.beginPath();
+            ctx.arc(sx, sy, sp.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.shadowBlur = 0;
+          ctx.globalAlpha = 1.0;
+          ctx.restore();
+
+          // 3. Electric Arcs / Lightning Discharges (for Ion Storms) or Gravitational Rings (for Gravity Storms)
+          if (isIon) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.75)';
+            ctx.lineWidth = 1.5;
+            for (let a = 0; a < 3; a++) {
+              const ang = s.rotation * 1.5 + (a * Math.PI * 2) / 3;
+              const len = s.radius * (0.4 + Math.sin(time * 5 + a) * 0.35);
+              ctx.beginPath();
+              ctx.moveTo(0, 0);
+              const midX = Math.cos(ang + 0.2) * (len * 0.5);
+              const midY = Math.sin(ang + 0.2) * (len * 0.5);
+              const endX = Math.cos(ang) * len;
+              const endY = Math.sin(ang) * len;
+              ctx.lineTo(midX, midY);
+              ctx.lineTo(endX, endY);
+              ctx.stroke();
+            }
+            ctx.restore();
+          } else {
+            // Gravitational distortion ripples
+            ctx.save();
+            const ripple = ((time * 0.4) % 1);
+            ctx.strokeStyle = `rgba(245, 158, 11, ${0.4 * (1 - ripple)})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, s.radius * ripple, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          // 4. Glowing Anomaly Core Eye
+          const coreGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, s.radius * 0.28);
+          coreGrad.addColorStop(0, '#ffffff');
+          coreGrad.addColorStop(0.4, `rgba(${primaryColor}, 0.9)`);
+          coreGrad.addColorStop(1, 'transparent');
+          ctx.fillStyle = coreGrad;
+          ctx.beginPath();
+          ctx.arc(0, 0, s.radius * 0.28, 0, Math.PI * 2);
+          ctx.fill();
+
+          // 5. Perimeter Warning Boundary
+          ctx.save();
+          ctx.strokeStyle = `rgba(${primaryColor}, 0.4)`;
+          ctx.setLineDash([8, 12]);
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(0, 0, s.radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+
+          // 6. Hazard Label
+          ctx.fillStyle = `rgba(${primaryColor}, 0.75)`;
+          ctx.font = '700 11px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(`// ${s.name.toUpperCase()} //`, 0, s.radius + 16);
+
+          ctx.restore();
+        }
+      }
+
+      // --- Rendering Loop (Top-Down 2D Camera with Depth Perspective) ---
+      render() {
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Screen Shake
+        const shakeX = (Math.random() - 0.5) * this.camera.shake;
+        const shakeY = (Math.random() - 0.5) * this.camera.shake;
+
+        ctx.save();
+        // Center camera with dynamic zoom and shake
+        ctx.translate(w / 2 + shakeX, h / 2 + shakeY);
+        ctx.scale(this.camera.zoom, this.camera.zoom);
+
+        // 1. Draw multi-layered infinite parallax starfield
+        this.renderParallaxStarfield(ctx, w, h);
+
+        // Switch to World Space
+        ctx.save();
+        ctx.translate(-this.camera.x, -this.camera.y);
+
+        // 2. Sector Perimeter Boundary (Grid & Hazard Lines)
+        this.renderSectorBoundaries(ctx);
+
+        // 3. Draw Celestial Planets & Space Scenery (Stations, Wrecks, Singularities)
+        this.renderPlanetsAndScenery(ctx);
+
+        // 3.5. Draw Cosmic Storms
+        this.renderStorms(ctx);
+
+        // 4. Draw Asteroid Field with Cast Depth Shadows & Mineral Veins
+        this.renderAsteroids(ctx);
+
+        // 5. Draw Interactive Objects / POIs / Anomalies
+        this.renderObjects(ctx);
+
+        // 6. Draw Enemies
+        this.renderEnemies(ctx);
+
+        // 7. Draw Boss
+        this.renderBoss(ctx);
+
+        // 8. Draw Player Ship with Hover Elevation Shadow, Shield, and Cannons
+        this.renderPlayerShip(ctx);
+
+        // 9. Draw Projectiles
+        for (let p of this.projectiles) {
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+
+        // 10. Draw Particles
+        for (let pt of this.particles) {
+          ctx.fillStyle = pt.color;
+          ctx.globalAlpha = Math.max(0, pt.life / pt.maxLife);
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1.0;
+
+        // 11. Draw Floating Damage Numbers
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        for (let ft of this.floatingTexts) {
+          ctx.fillStyle = ft.color;
+          ctx.fillText(ft.text, ft.x, ft.y);
+        }
+
+        // 12. Crosshair at mouse world coordinates
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(this.mouse.worldX, this.mouse.worldY, 11, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.restore(); // Exit World Space
+        ctx.restore(); // Exit Camera Transform
+
+        // 13. Draw Radar Minimap
+        this.renderMinimap();
+      }
+
+      renderParallaxStarfield(ctx, w, h) {
+        // Deep cosmic sector gradient
+        const zColor = ZONES[this.currentZone - 1].color;
+        const grad = ctx.createRadialGradient(0, 0, 100, 0, 0, Math.max(w, h));
+        grad.addColorStop(0, zColor + '18');
+        grad.addColorStop(0.65, '#060913');
+        grad.addColorStop(1, '#020408');
+        ctx.fillStyle = grad;
+        ctx.fillRect(-w, -h, w * 2, h * 2);
+
+        // Parallax stars wrapping infinitely around the viewport
+        const viewW = w / this.camera.zoom;
+        const viewH = h / this.camera.zoom;
+        const halfVW = viewW / 2;
+        const halfVH = viewH / 2;
+        const now = performance.now() * 0.0025;
+
+        for (let s of this.stars) {
+          const shiftX = this.camera.x * s.speed;
+          const shiftY = this.camera.y * s.speed;
+
+          // Wrap coordinates around screen center
+          let px = ((s.x - shiftX) % viewW + viewW) % viewW - halfVW;
+          let py = ((s.y - shiftY) % viewH + viewH) % viewH - halfVH;
+
+          ctx.fillStyle = s.color;
+          ctx.globalAlpha = s.alpha * (0.75 + Math.sin(now + s.pulse) * 0.25);
+          ctx.beginPath();
+          ctx.arc(px, py, s.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1.0;
+      }
+
+      renderSectorBoundaries(ctx) {
+        ctx.save();
+        // High-tech neon boundary grid
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.35)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([24, 16]);
+        ctx.strokeRect(0, 0, this.worldSize, this.worldSize);
+        ctx.setLineDash([]);
+
+        // Subtle sector area fill
+        ctx.fillStyle = 'rgba(0, 240, 255, 0.015)';
+        ctx.fillRect(0, 0, this.worldSize, this.worldSize);
+
+        // Border alert hazard stripes
+        ctx.font = 'bold 11px monospace';
+        ctx.fillStyle = 'rgba(0, 240, 255, 0.5)';
+        ctx.fillText('// ПРЕДЕЛ СЕКТОРА // РАДИАЦИОННЫЙ БАРЬЕР //', 240, 32);
+        ctx.fillText('// ПРЕДЕЛ СЕКТОРА // РАДИАЦИОННЫЙ БАРЬЕР //', 240, this.worldSize - 20);
+        ctx.restore();
+      }
+
+      renderPlanetsAndScenery(ctx) {
+        const time = performance.now() * 0.001;
+
+        // 1. Celestial Planets (Top-Down with 3D Spherical Shading & Rings)
+        for (let p of this.planets) {
+          ctx.save();
+          ctx.translate(p.x, p.y);
+
+          // Atmospheric coronal glow
+          const atmosGrad = ctx.createRadialGradient(0, 0, p.radius * 0.85, 0, 0, p.radius * 1.35);
+          atmosGrad.addColorStop(0, p.atmosphere);
+          atmosGrad.addColorStop(1, 'transparent');
+          ctx.fillStyle = atmosGrad;
+          ctx.beginPath();
+          ctx.arc(0, 0, p.radius * 1.35, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Planet Back Rings
+          if (p.hasRings) {
+            ctx.save();
+            ctx.rotate(-Math.PI / 5);
+            ctx.strokeStyle = p.ringColor || 'rgba(0, 240, 255, 0.3)';
+            ctx.lineWidth = 14;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, p.radius * 1.75, p.radius * 0.55, 0, Math.PI, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          // 3D Sphere Shading from Top-Down Angle
+          const sphereGrad = ctx.createRadialGradient(
+            -p.radius * 0.35, -p.radius * 0.35, p.radius * 0.05,
+            0, 0, p.radius
+          );
+          sphereGrad.addColorStop(0, '#ffffff');
+          sphereGrad.addColorStop(0.25, p.color1);
+          sphereGrad.addColorStop(0.8, p.color2);
+          sphereGrad.addColorStop(1, '#05070f');
+
+          ctx.fillStyle = sphereGrad;
+          ctx.beginPath();
+          ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Singularity Accretion Vortex
+          if (p.isSingularity) {
+            ctx.save();
+            ctx.rotate(time * 0.8);
+            ctx.strokeStyle = 'rgba(199, 125, 255, 0.45)';
+            ctx.lineWidth = 4;
+            for (let i = 0; i < 4; i++) {
+              ctx.rotate(Math.PI / 2);
+              ctx.beginPath();
+              ctx.arc(0, 0, p.radius * 0.72, 0, Math.PI / 2);
+              ctx.stroke();
+            }
+            ctx.restore();
+          }
+
+          // Planet Front Rings
+          if (p.hasRings) {
+            ctx.save();
+            ctx.rotate(-Math.PI / 5);
+            ctx.strokeStyle = p.ringColor || 'rgba(0, 240, 255, 0.35)';
+            ctx.lineWidth = 14;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, p.radius * 1.75, p.radius * 0.55, 0, 0, Math.PI);
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          // Planet Title
+          ctx.fillStyle = 'rgba(226, 232, 240, 0.75)';
+          ctx.font = '600 12px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(p.name, 0, p.radius + 28);
+
+          ctx.restore();
+        }
+
+        // 2. Space Stations & Derelict Hulls
+        for (let sc of this.sceneryObjects) {
+          ctx.save();
+          ctx.translate(sc.x, sc.y);
+          ctx.rotate(sc.angle);
+
+          if (sc.type === 'station') {
+            // Shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.beginPath();
+            ctx.arc(10, 14, sc.radius * 0.65, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Solar Panels
+            ctx.fillStyle = '#0284c7';
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 1.5;
+            ctx.fillRect(-58, -8, 38, 16);
+            ctx.strokeRect(-58, -8, 38, 16);
+            ctx.fillRect(20, -8, 38, 16);
+            ctx.strokeRect(20, -8, 38, 16);
+
+            // Hub
+            ctx.fillStyle = '#1e293b';
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, 22, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Beacons
+            const blink = Math.sin(time * 4) > 0;
+            ctx.fillStyle = blink ? '#22c55e' : '#ef4444';
+            ctx.beginPath();
+            ctx.arc(-54, 0, 3, 0, Math.PI * 2);
+            ctx.arc(54, 0, 3, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (sc.type === 'wreck') {
+            // Shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.fillRect(-12, -4, 38, 18);
+
+            // Broken ship hull
+            ctx.fillStyle = '#1e293b';
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(-20, -12);
+            ctx.lineTo(15, -16);
+            ctx.lineTo(24, 0);
+            ctx.lineTo(10, 14);
+            ctx.lineTo(-18, 8);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Exposed wiring
+            ctx.fillStyle = Math.sin(time * 3 + sc.x) > 0 ? '#ffb703' : '#ff2a5f';
+            ctx.fillRect(-4, -2, 4, 4);
+          }
+
+          // Label
+          ctx.fillStyle = 'rgba(148, 163, 184, 0.65)';
+          ctx.font = '10px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(sc.name, 0, sc.radius + 16);
+
+          ctx.restore();
+        }
+      }
+
+      renderAsteroids(ctx) {
+        for (let a of this.asteroids) {
+          ctx.save();
+          ctx.translate(a.x, a.y);
+          ctx.rotate(a.angle);
+
+          // Cast depth shadow (offset for top-down elevation)
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+          ctx.beginPath();
+          ctx.arc(8, 12, a.radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Rocky body with 3D gradient
+          const aGrad = ctx.createRadialGradient(-a.radius * 0.3, -a.radius * 0.3, 2, 0, 0, a.radius);
+          aGrad.addColorStop(0, a.hasResource ? '#475569' : '#334155');
+          aGrad.addColorStop(1, '#0f172a');
+          ctx.fillStyle = aGrad;
+          ctx.strokeStyle = '#475569';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(0, 0, a.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Glowing resource veins
+          if (a.hasResource) {
+            const pulse = 0.7 + Math.sin(performance.now() * 0.004 + a.x) * 0.3;
+            ctx.fillStyle = `rgba(0, 240, 255, ${pulse})`;
+            ctx.beginPath();
+            ctx.arc(a.radius * 0.3, a.radius * 0.2, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+      }
+
+      renderObjects(ctx) {
+        for (let obj of this.objects) {
+          ctx.save();
+          ctx.translate(obj.x, obj.y);
+
+          // Pulsing scanner ring
+          const ringPulse = (performance.now() * 0.002) % 1;
+          ctx.strokeStyle = obj.type === 'gate' ? 'rgba(157, 78, 221, ' + (1 - ringPulse) + ')' : 'rgba(0, 240, 255, ' + (1 - ringPulse) + ')';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(0, 0, obj.radius + ringPulse * 25, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Main object core
+          if (obj.type === 'gate') {
+            ctx.fillStyle = '#1e1b4b';
+            ctx.strokeStyle = '#9d4edd';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, 0, obj.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // Swirling gate portal
+            ctx.fillStyle = '#c77dff';
+            ctx.beginPath();
+            ctx.arc(0, 0, obj.radius * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (obj.type === 'monolith') {
+            ctx.fillStyle = '#065f46';
+            ctx.strokeStyle = '#06d6a0';
+            ctx.lineWidth = 2;
+            ctx.fillRect(-20, -35, 40, 70);
+            ctx.strokeRect(-20, -35, 40, 70);
+          } else if (obj.type === 'probe') {
+            ctx.fillStyle = '#0c4a6e';
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, obj.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          } else {
+            // Container Cache
+            ctx.fillStyle = '#1e293b';
+            ctx.strokeStyle = '#ffb703';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-16, -16, 32, 32);
+            ctx.fillRect(-16, -16, 32, 32);
+          }
+
+          // Object Label
+          ctx.fillStyle = '#e2e8f0';
+          ctx.font = '11px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(obj.name, 0, obj.radius + 18);
+          ctx.restore();
+        }
+      }
+
+      renderEnemies(ctx) {
+        for (let e of this.enemies) {
+          ctx.save();
+          ctx.translate(e.x, e.y);
+          ctx.rotate(e.angle);
+
+          // Cast shadow
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+          ctx.beginPath();
+          ctx.arc(6, 9, e.radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = e.isElite ? '#7f1d1d' : '#450a0a';
+          ctx.strokeStyle = e.isElite ? '#ffb703' : '#ff2a5f';
+          ctx.lineWidth = 2;
+
+          ctx.beginPath();
+          ctx.moveTo(e.radius, 0);
+          ctx.lineTo(-e.radius, -e.radius * 0.7);
+          ctx.lineTo(-e.radius * 0.4, 0);
+          ctx.lineTo(-e.radius, e.radius * 0.7);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Health bar above enemy
+          if (e.hp < e.maxHp) {
+            ctx.rotate(-e.angle);
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(-15, -e.radius - 12, 30, 4);
+            ctx.fillStyle = '#ff2a5f';
+            ctx.fillRect(-15, -e.radius - 12, (e.hp / e.maxHp) * 30, 4);
+          }
+          ctx.restore();
+        }
+      }
+
+      renderBoss(ctx) {
+        if (!this.currentBoss) return;
+        const b = this.currentBoss;
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate(b.angle);
+
+        // Glowing aura
+        ctx.fillStyle = 'rgba(255, 42, 95, 0.15)';
+        ctx.beginPath();
+        ctx.arc(0, 0, b.radius + 15, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#1a050d';
+        ctx.strokeStyle = '#ff2a5f';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, b.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Core Eye
+        ctx.fillStyle = '#ffb703';
+        ctx.beginPath();
+        ctx.arc(15, 0, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      renderPlayerShip(ctx) {
+        ctx.save();
+        ctx.translate(this.player.x, this.player.y);
+        ctx.rotate(this.player.angle);
+
+        // Top-Down Elevation Drop Shadow (creates visual height above the celestial background)
+        ctx.save();
+        ctx.translate(10, 14);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.beginPath();
+        ctx.moveTo(this.player.radius + 4, 0);
+        ctx.lineTo(-this.player.radius + 4, -this.player.radius * 0.8);
+        ctx.lineTo(-this.player.radius * 0.4, 0);
+        ctx.lineTo(-this.player.radius + 4, this.player.radius * 0.8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        // Shimmering Shield Bubble
+        if (this.player.shield > 0) {
+          ctx.strokeStyle = `rgba(0, 240, 255, ${0.25 + (this.player.shield / this.player.maxShield) * 0.35})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(0, 0, this.player.radius + 9, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // Armored Hull
+        ctx.fillStyle = '#0b1329';
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(this.player.radius + 4, 0);
+        ctx.lineTo(-this.player.radius + 4, -this.player.radius * 0.8);
+        ctx.lineTo(-this.player.radius * 0.4, 0);
+        ctx.lineTo(-this.player.radius + 4, this.player.radius * 0.8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Twin wing plasma cannon mounts
+        ctx.fillStyle = '#00f0ff';
+        ctx.fillRect(-2, -this.player.radius * 0.7 - 2, 7, 3);
+        ctx.fillRect(-2, this.player.radius * 0.7 - 1, 7, 3);
+
+        // Cockpit canopy with glass reflection
+        ctx.fillStyle = '#00f0ff';
+        ctx.beginPath();
+        ctx.arc(4, 0, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      renderMinimap() {
+        const mCtx = this.minimapCtx;
+        const mw = this.minimapCanvas.width;
+        const mh = this.minimapCanvas.height;
+        const scale = mw / this.worldSize;
+
+        mCtx.clearRect(0, 0, mw, mh);
+        mCtx.fillStyle = 'rgba(5, 7, 13, 0.85)';
+        mCtx.fillRect(0, 0, mw, mh);
+
+        // Sector planets on radar
+        for (let p of this.planets) {
+          mCtx.fillStyle = 'rgba(0, 240, 255, 0.25)';
+          mCtx.beginPath();
+          mCtx.arc(p.x * scale, p.y * scale, Math.max(3, p.radius * scale * 0.5), 0, Math.PI * 2);
+          mCtx.fill();
+        }
+
+        // Cosmic Storms on radar
+        for (let s of this.storms) {
+          mCtx.fillStyle = s.type === 'ion' ? 'rgba(0, 240, 255, 0.25)' : 'rgba(245, 158, 11, 0.25)';
+          mCtx.strokeStyle = s.type === 'ion' ? '#00f0ff' : '#f59e0b';
+          mCtx.lineWidth = 1;
+          mCtx.beginPath();
+          mCtx.arc(s.x * scale, s.y * scale, s.radius * scale, 0, Math.PI * 2);
+          mCtx.fill();
+          mCtx.stroke();
+        }
+
+        // POIs
+        for (let obj of this.objects) {
+          mCtx.fillStyle = obj.type === 'gate' ? '#9d4edd' : '#00f0ff';
+          mCtx.beginPath();
+          mCtx.arc(obj.x * scale, obj.y * scale, 3, 0, Math.PI * 2);
+          mCtx.fill();
+        }
+
+        // Enemies
+        mCtx.fillStyle = '#ff2a5f';
+        for (let e of this.enemies) {
+          mCtx.fillRect(e.x * scale - 1, e.y * scale - 1, 2, 2);
+        }
+
+        // Boss
+        if (this.currentBoss) {
+          mCtx.fillStyle = '#ffb703';
+          mCtx.beginPath();
+          mCtx.arc(this.currentBoss.x * scale, this.currentBoss.y * scale, 4, 0, Math.PI * 2);
+          mCtx.fill();
+        }
+
+        // Player
+        mCtx.fillStyle = '#fff';
+        mCtx.beginPath();
+        mCtx.arc(this.player.x * scale, this.player.y * scale, 3, 0, Math.PI * 2);
+        mCtx.fill();
+      }
+
+      // --- Main Game Loop ---
+      gameLoop(time) {
+        const dt = Math.min(0.1, (time - this.lastTime) / 1000);
+        this.lastTime = time;
+
+        this.update(dt);
+        this.render();
+
+        requestAnimationFrame((t) => this.gameLoop(t));
+      }
+    }
+
+    // Initialize Game Engine on Page Load
+    window.addEventListener('DOMContentLoaded', () => {
+      window.gameInstance = new Game();
+    });
+  </script>
+</body>
+</html>
